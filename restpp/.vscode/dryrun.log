@@ -1,6 +1,0 @@
-make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/otavio/git/personal/restpp/restpp'
-make: Leaving directory '/home/otavio/git/personal/restpp/restpp'
- 
-make: *** No targets specified and no makefile found.  Stop.
-

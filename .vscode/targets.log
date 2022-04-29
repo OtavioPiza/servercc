@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.3
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2020 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Apr 29 00:50:53 2022
+# Make data base, printed on Fri Apr 29 01:26:05 2022
 
 # Variables
 
@@ -19,11 +21,11 @@ GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
 SSH_AGENT_LAUNCHER = gnome-keyring
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-d0a483b6-fbfb-4b2a-915f-e423dd74cab1.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-9c6fce8d-6d87-4a15-ae02-2263c4910ba1.sock
 # environment
 MANDATORY_PATH = /usr/share/gconf/ubuntu.mandatory.path
 # environment
-VSCODE_CWD = /home/otavio/git/personal/restpp/restpp
+VSCODE_CWD = /home/otavio/git/personal/restpp
 # environment
 WINDOWPATH = 2
 # environment
@@ -39,7 +41,7 @@ VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # default
 .VARIABLES := 
 # environment
-PWD = /home/otavio/git/personal/restpp/restpp
+PWD = /home/otavio/git/personal/restpp
 # automatic
 %D = $(patsubst %/,%,$(dir $%))
 # environment
@@ -47,7 +49,7 @@ LSCOLORS = Gxfxcxdxbxegedabagacad
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-OLDPWD = /home/otavio/git/personal/restpp
+OLDPWD = /home/otavio/git/personal/restpp/restpp
 # automatic
 ^D = $(patsubst %/,%,$(dir $^))
 # environment
@@ -73,7 +75,7 @@ GNOME_TERMINAL_SERVICE = :1.352
 # makefile
 MAKEFLAGS = pqrR
 # makefile
-CURDIR := /home/otavio/git/personal/restpp/restpp
+CURDIR := /home/otavio/git/personal/restpp
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
@@ -105,7 +107,7 @@ ZSH = /home/otavio/.oh-my-zsh
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-VSCODE_PID = 32821
+VSCODE_PID = 42207
 # environment
 XDG_SESSION_TYPE = x11
 # automatic
@@ -139,7 +141,7 @@ XMODIFIERS = @im=ibus
 # environment
 SHLVL = 1
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/4712e644_448f_486e_92fd_f1011e4f154b
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/bcf52aa5_b091_4794_86f1_f762bacb2a06
 # environment
 MAKELEVEL := 0
 # default
@@ -177,7 +179,7 @@ LOGNAME = otavio
 # makefile
 .DEFAULT_GOAL := 
 # environment
-SYSTEMD_EXEC_PID = 2577
+SYSTEMD_EXEC_PID = 18601
 # environment
 DISPLAY = :1
 # environment
@@ -247,9 +249,9 @@ GDMSESSION = ubuntu
 
 # Directories
 
-# . (device 66306, inode 1311150): 7 files, no impossibilities.
+# . (device 66306, inode 1311125): 11 files, no impossibilities.
 
-# 7 files, no impossibilities in 1 directories.
+# 11 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -284,6 +286,7 @@ makefile:
 #  File has been updated.
 #  Failed to be updated.
 
+ 
 # Not a target:
 GNUmakefile:
 #  Implicit rule search has been done.
@@ -292,9 +295,6 @@ GNUmakefile:
 #  Failed to be updated.
 
 # files hash-table stats:
- 
-make: *** No rule to make target 'all'.  Stop.
-
 # Load=6/1024=1%, Rehash=0, Collisions=0/15=0%
 # VPATH Search Paths
 
@@ -302,12 +302,12 @@ make: *** No rule to make target 'all'.  Stop.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 15 / storage = 141 B / avg = 9 B
-# current buf: size = 8162 B / used = 141 B / count = 15 / avg = 9 B
+# strcache buffers: 1 (0) / strings = 19 / storage = 164 B / avg = 8 B
+# current buf: size = 8162 B / used = 164 B / count = 19 / avg = 8 B
 
-# strcache performance: lookups = 18 / hit rate = 16%
+# strcache performance: lookups = 22 / hit rate = 13%
 # hash-table stats:
-# Load=15/8192=0%, Rehash=0, Collisions=0/18=0%
-# Finished Make data base on Fri Apr 29 00:50:53 2022
+# Load=19/8192=0%, Rehash=0, Collisions=0/22=0%
+# Finished Make data base on Fri Apr 29 01:26:05 2022
 
  
