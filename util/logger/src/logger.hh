@@ -29,7 +29,15 @@ namespace restpp
      * @param msg message to log
      * @param sender sender of the message
      */
-    inline void log_info(const std::string &msg, const std::string &sender = "");
+    void log_info(const std::string &msg, const std::string &sender = "");
+
+    /**
+     * @brief logs a warning warning message to ERROR_STREAM
+     *
+     * @param msg message to log
+     * @param sender sender of the message
+     */
+    void log_warn(const std::string &msg, const std::string &sender);
 
     /**
      * @brief logs an error to ERROR_STREAM
@@ -37,7 +45,7 @@ namespace restpp
      * @param msg message to log
      * @param sender sender of the message
      */
-    inline void log_error(const std::string &msg, const std::string &sender = "");
+    void log_error(const std::string &msg, const std::string &sender = "");
 }
 
 #endif

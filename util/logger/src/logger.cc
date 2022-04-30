@@ -8,9 +8,28 @@
  * @param msg message to log
  * @param sender sender of the message
  */
-inline void restpp::log_info(const std::string &msg, const std::string &sender)
+void restpp::log_info(const std::string &msg, const std::string &sender)
 {
-    fprintf(INFO_STREAM, "INFO [%s]: %s\n", sender.c_str(), msg.c_str());
+    fprintf(INFO_STREAM,
+            "\033[0;32m"
+            "INFO [%s]: %s\n"
+            "\033[0m",
+            sender.c_str(), msg.c_str());
+}
+
+/**
+ * @brief logs a warning warning message to ERROR_STREAM
+ * 
+ * @param msg 
+ * @param sender 
+ */
+void restpp::log_warn(const std::string &msg, const std::string &sender)
+{
+    fprintf(INFO_STREAM,
+            "\033[0;33m"
+            "WARN [%s]: %s\n"
+            "\033[0m",
+            sender.c_str(), msg.c_str());
 }
 
 /**
@@ -19,7 +38,11 @@ inline void restpp::log_info(const std::string &msg, const std::string &sender)
  * @param msg message to log
  * @param sender sender of the message
  */
-inline void restpp::log_error(const std::string &msg, const std::string &sender)
+void restpp::log_error(const std::string &msg, const std::string &sender)
 {
-    fprintf(ERROR_STREAM, "ERROR [%s]: %s\n", sender.c_str(), msg.c_str());
+    fprintf(ERROR_STREAM,
+            "\033[0;31m"
+            "ERROR [%s]: %s\n"
+            "\033[0m",
+            sender.c_str(), msg.c_str());
 }
