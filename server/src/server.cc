@@ -118,9 +118,9 @@ void restpp::Server::run()
 /* private methods */
 
 /**
- * @brief reads a request from a socket; if the request times out, the socket is closed 
+ * @brief reads a request from a socket; if the request times out, the socket is closed
  * and the timeout flag is set to true
- * 
+ *
  * @param slave_socket slave socket descriptor
  * @param request request string to read into
  * @return bool true if the request was read successfully, false if the request timed out
@@ -152,6 +152,8 @@ bool restpp::_read_request(int slave_socket, std::string &request)
 
     if (status == std::future_status::timeout)
     {
+        std::string time_out_response = "HTTP/1.1 408 Request Timeout\r\n\r\n";
+        send(slave_socket, time_out_response.c_str(), time_out_response.length(), 0);
         shutdown(slave_socket, SHUT_RDWR);
         return false;
     }
@@ -188,7 +190,7 @@ void restpp::Server::_run_in_iterative_mode()
         {
             restpp::log_warn("Request timed out", "Server");
         }
-        else 
+        else
         {
             close(slave_socket);
         }
