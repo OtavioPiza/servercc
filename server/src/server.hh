@@ -26,16 +26,6 @@
 namespace restpp
 {
     /**
-     * @brief reads a request from a socket; if the request times out, the socket is closed
-     * and the timeout flag is set to true
-     *
-     * @param slave_socket slave socket descriptor
-     * @param request request string to read into
-     * @return bool true if the request was read successfully, false if the request timed out
-     */
-    bool _read_request(int slave_socket, std::string &request);
-
-    /**
      * @brief The Server class
      *
      * @details The Server class is a simple HTTP server.
@@ -81,6 +71,24 @@ namespace restpp
         struct sockaddr_in *server_addr; // Server address
         int master_socket;               // Master socket
         bool running;                    // Running flag
+
+        /**
+         * @brief reads a request from a socket; if the request times out, the socket is closed
+         * and the timeout flag is set to true
+         *
+         * @param slave_socket slave socket descriptor
+         * @param request request string to read into
+         * @return bool true if the request was read successfully, false if the request timed out
+         */
+        bool _read_request(int slave_socket, std::string &request);
+
+        /**
+         * @brief processes a request
+         *
+         * @param slave_socket
+         * @param client_addr
+         */
+        void _process_request(int slave_socket, struct sockaddr_in client_addr);
 
         /**
          * @brief runs the server in iterative mode, listening for requests and processing

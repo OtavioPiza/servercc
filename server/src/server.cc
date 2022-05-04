@@ -123,7 +123,7 @@ void restpp::Server::run()
  * @param request request string to read into
  * @return bool true if the request was read successfully, false if the request timed out
  */
-bool restpp::_read_request(int slave_socket, std::string &request)
+bool restpp::Server::_read_request(int slave_socket, std::string &request)
 {
     auto read_request = [&request, slave_socket]()
     {
@@ -161,6 +161,27 @@ bool restpp::_read_request(int slave_socket, std::string &request)
 }
 
 /**
+ * @brief processes a request
+ *
+ * @param slave_socket
+ * @param client_addr
+ */
+void restpp::Server::_process_request(int slave_socket, struct sockaddr_in client_addr)
+{
+    /* read request */
+
+    std::string request;
+    if (!this->_read_request(slave_socket, request))
+    {
+        restpp::log_warn("Request from " + std::string(inet_ntoa(client_addr.sin_addr)) + " timed out", "Server");
+    }
+    else
+    {
+        close(slave_socket);
+    }
+}
+
+/**
  * @brief runs the server in iterative mode, listening for requests and processing
  * theme one at a time
  */
@@ -181,16 +202,6 @@ void restpp::Server::_run_in_iterative_mode()
             perror("accept");
         }
 
-        /* read request */
-
-        std::string request;
-        if (!restpp::_read_request(slave_socket, request))
-        {
-            restpp::log_warn("Request from " + std::string(inet_ntoa(client_addr.sin_addr)) + " timed out", "Server");
-        }
-        else
-        {
-            close(slave_socket);
-        }
+        this->_process_request(slave_socket, client_addr);
     }
 }
