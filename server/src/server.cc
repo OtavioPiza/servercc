@@ -2,12 +2,21 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
 
 #include <stdio.h>
 #include <cstring>
 #include <string>
+
+#include <future>
+#include <thread>
+#include <chrono>
+
+#include <stdio.h>
+
+#include <iostream>
 
 #include "server.hh"
 #include "../../util/logger/src/logger.hh"
@@ -66,6 +75,14 @@ restpp::Server::Server(unsigned short port, unsigned char mode)
         throw "Error binding socket";
     }
 
+    /* listen */
+
+    if (listen(this->master_socket, SOMAXCONN) < 0)
+    {
+        perror("listen");
+        throw "Error listening on socket";
+    }
+
     restpp::log_info("Server started on port " + std::to_string(this->port), "Server");
 }
 
@@ -79,7 +96,67 @@ restpp::Server::~Server()
     restpp::log_info("Server destroyed", "Server");
 }
 
+/**
+ * @brief Starts the server
+ */
+void restpp::Server::run()
+{
+    this->running = true;
+
+    switch (this->mode)
+    {
+    case 0:
+        this->_run_in_iterative_mode();
+        break;
+
+    default:
+        restpp::log_error("Invalid mode", "Server");
+        break;
+    }
+}
+
 /* private methods */
+
+/**
+ * @brief reads a request from a socket; if the request times out, the socket is closed 
+ * and the timeout flag is set to true
+ * 
+ * @param slave_socket slave socket descriptor
+ * @param request request string to read into
+ * @return bool true if the request was read successfully, false if the request timed out
+ */
+bool restpp::_read_request(int slave_socket, std::string &request)
+{
+    auto read_request = [&request, slave_socket]()
+    {
+        char buffer[REQUEST_READ_BUFFER_SIZE];
+        int bytes_read;
+
+        while ((bytes_read = recv(slave_socket, buffer, REQUEST_READ_BUFFER_SIZE, 0)) > 0)
+        {
+            request += std::string(buffer, bytes_read);
+
+            /* check if request is terminated */
+
+            if (request.length() >= 4 &&
+                request[request.length() - 4] == '\r' && request[request.length() - 3] == '\n' &&
+                request[request.length() - 2] == '\r' && request[request.length() - 1] == '\n')
+            {
+                break;
+            }
+        }
+    };
+
+    auto read_request_future = std::async(std::launch::async, read_request);
+    auto status = read_request_future.wait_for(std::chrono::milliseconds(REQUEST_READ_TIMEOUT));
+
+    if (status == std::future_status::timeout)
+    {
+        shutdown(slave_socket, SHUT_RDWR);
+        return false;
+    }
+    return true;
+}
 
 /**
  * @brief runs the server in iterative mode, listening for requests and processing
@@ -88,7 +165,6 @@ restpp::Server::~Server()
 void restpp::Server::_run_in_iterative_mode()
 {
     restpp::log_info("Server started in iterative mode", "Server");
-    this->running = true;
 
     while (this->running)
     {
@@ -98,9 +174,23 @@ void restpp::Server::_run_in_iterative_mode()
                                    (struct sockaddr *)&client_addr,
                                    (socklen_t *)&client_addr_len);
 
+        restpp::log_info("New connection from " + std::string(inet_ntoa(client_addr.sin_addr)), "Server");
+
         if (slave_socket < 0)
         {
             perror("accept");
+        }
+
+        /* read request */
+
+        std::string request;
+        if (!restpp::_read_request(slave_socket, request))
+        {
+            restpp::log_warn("Request timed out", "Server");
+        }
+        else 
+        {
+            close(slave_socket);
         }
     }
 }

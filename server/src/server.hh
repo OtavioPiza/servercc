@@ -5,14 +5,36 @@
 #define PROTOCOL "HTTP/1.1"
 #endif
 
+#ifndef DEFAULT_PORT
+#define DEFAULT_PORT 8080
+#endif
+
 #ifndef DEFAULT_MODE
 #define DEFAULT_MODE 0
+#endif
+
+#ifndef REQUEST_READ_BUFFER_SIZE
+#define REQUEST_READ_BUFFER_SIZE 1024
+#endif
+
+#ifndef REQUEST_READ_TIMEOUT
+#define REQUEST_READ_TIMEOUT 1000
 #endif
 
 #include <string>
 
 namespace restpp
 {
+    /**
+     * @brief reads a request from a socket; if the request times out, the socket is closed
+     * and the timeout flag is set to true
+     *
+     * @param slave_socket slave socket descriptor
+     * @param request request string to read into
+     * @return bool true if the request was read successfully, false if the request timed out
+     */
+    bool _read_request(int slave_socket, std::string &request);
+
     /**
      * @brief The Server class
      *
@@ -33,15 +55,25 @@ namespace restpp
 
         /**
          * @brief Construct a new Server object with default options
-         * 
+         *
          * @param port port the server will listen on
          */
-        Server(unsigned short port) : Server(port, DEFAULT_MODE) {};
+        Server(unsigned short port) : Server(port, DEFAULT_MODE){};
+
+        /**
+         * @brief Construct a new Server object with default options
+         */
+        Server() : Server(DEFAULT_PORT, DEFAULT_MODE){};
 
         /**
          * @brief Destroy the Server object
          */
         ~Server();
+
+        /**
+         * @brief Starts the server
+         */
+        void run();
 
     private:
         unsigned short port;             // Port to listen on
