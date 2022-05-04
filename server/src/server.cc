@@ -176,8 +176,6 @@ void restpp::Server::_run_in_iterative_mode()
                                    (struct sockaddr *)&client_addr,
                                    (socklen_t *)&client_addr_len);
 
-        restpp::log_info("New connection from " + std::string(inet_ntoa(client_addr.sin_addr)), "Server");
-
         if (slave_socket < 0)
         {
             perror("accept");
@@ -188,7 +186,7 @@ void restpp::Server::_run_in_iterative_mode()
         std::string request;
         if (!restpp::_read_request(slave_socket, request))
         {
-            restpp::log_warn("Request timed out", "Server");
+            restpp::log_warn("Request from " + std::string(inet_ntoa(client_addr.sin_addr)) + " timed out", "Server");
         }
         else
         {
