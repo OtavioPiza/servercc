@@ -18,7 +18,7 @@
 #endif
 
 #ifndef REQUEST_READ_TIMEOUT
-#define REQUEST_READ_TIMEOUT 1000
+#define REQUEST_READ_TIMEOUT 5000
 #endif
 
 #include <string>

@@ -16,8 +16,6 @@
 
 #include <stdio.h>
 
-#include <iostream>
-
 #include "server.hh"
 #include "../../util/logger/src/logger.hh"
 
@@ -155,8 +153,10 @@ bool restpp::_read_request(int slave_socket, std::string &request)
         std::string time_out_response = "HTTP/1.1 408 Request Timeout\r\n\r\n";
         send(slave_socket, time_out_response.c_str(), time_out_response.length(), 0);
         shutdown(slave_socket, SHUT_RDWR);
+        read_request_future.get();
         return false;
     }
+    read_request_future.get();
     return true;
 }
 
