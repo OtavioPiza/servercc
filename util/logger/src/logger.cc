@@ -12,7 +12,7 @@ void restpp::log_info(const std::string &msg, const std::string &sender)
 {
     fprintf(INFO_STREAM,
             "\033[0;32m"
-            "INFO [%s]: %s\n"
+            "[%s] INFO: %s\n"
             "\033[0m",
             sender.c_str(), msg.c_str());
 }
@@ -27,7 +27,7 @@ void restpp::log_warn(const std::string &msg, const std::string &sender)
 {
     fprintf(INFO_STREAM,
             "\033[0;33m"
-            "WARN [%s]: %s\n"
+            "[%s] WARN: %s\n"
             "\033[0m",
             sender.c_str(), msg.c_str());
 }
@@ -42,7 +42,7 @@ void restpp::log_error(const std::string &msg, const std::string &sender)
 {
     fprintf(ERROR_STREAM,
             "\033[0;31m"
-            "ERROR [%s]: %s\n"
+            "[%s] ERROR: %s\n"
             "\033[0m",
             sender.c_str(), msg.c_str());
 }
