@@ -221,7 +221,7 @@ void restpp::Server::_run_in_thread_mode()
         auto slave_socket = accept(this->master_socket,
                                    (struct sockaddr *)&client_addr,
                                    (socklen_t *)&client_addr_len);
-
+        
         if (slave_socket < 0)
         {
             perror("accept");

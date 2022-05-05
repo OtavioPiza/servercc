@@ -31,6 +31,8 @@
 
 #include <string>
 
+#include "../../router/src/router.hh"
+
 namespace restpp
 {
     /**
@@ -42,6 +44,7 @@ namespace restpp
     {
     public:
         const std::string protocol = PROTOCOL; // Protocol to use
+        restpp::Router router;                 // Router
 
         /**
          * @brief Construct a new Server object
