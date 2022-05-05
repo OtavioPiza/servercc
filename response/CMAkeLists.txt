@@ -3,8 +3,3 @@ add_library(
     src/response.cc
     src/response.hh
 )
-
-add_executable(
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    response
-)
