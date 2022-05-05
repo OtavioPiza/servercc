@@ -17,5 +17,8 @@ add_executable("${PROJECT_NAME}" main.cc)
 
 # libs
 
+
+
 add_subdirectory(server)
 target_link_libraries("${PROJECT_NAME}" server)
+
