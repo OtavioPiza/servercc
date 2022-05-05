@@ -33,11 +33,6 @@ restpp::Server::Server(unsigned short port, unsigned char mode)
     this->mode = mode;
     this->running = false;
 
-    if (this->mode > 0)
-    {
-        this->mode = DEFAULT_MODE;
-    }
-
     /* cofigure server address */
 
     this->server_addr = new struct sockaddr_in;
@@ -103,8 +98,12 @@ void restpp::Server::run()
 
     switch (this->mode)
     {
-    case 0:
+    case ITERATIVE_MODE:
         this->_run_in_iterative_mode();
+        break;
+
+    case THREAD_MODE:
+        this->_run_in_thread_mode();
         break;
 
     default:
@@ -153,6 +152,7 @@ bool restpp::Server::_read_request(int slave_socket, std::string &request)
         std::string time_out_response = "HTTP/1.1 408 Request Timeout\r\n\r\n";
         send(slave_socket, time_out_response.c_str(), time_out_response.length(), 0);
         shutdown(slave_socket, SHUT_RDWR);
+        close(slave_socket);
         read_request_future.get();
         return false;
     }
@@ -183,7 +183,7 @@ void restpp::Server::_process_request(int slave_socket, struct sockaddr_in clien
 
 /**
  * @brief runs the server in iterative mode, listening for requests and processing
- * theme one at a time
+ * them one at a time
  */
 void restpp::Server::_run_in_iterative_mode()
 {
@@ -203,5 +203,37 @@ void restpp::Server::_run_in_iterative_mode()
         }
 
         this->_process_request(slave_socket, client_addr);
+    }
+}
+
+/**
+ * @brief runs the server in thread mode, listening for requests and processing
+ * them in a separate thread
+ */
+void restpp::Server::_run_in_thread_mode()
+{
+    restpp::log_info("Server started in thread mode", "Server");
+
+    while (this->running)
+    {
+        struct sockaddr_in client_addr;
+        auto client_addr_len = sizeof(struct sockaddr_in);
+        auto slave_socket = accept(this->master_socket,
+                                   (struct sockaddr *)&client_addr,
+                                   (socklen_t *)&client_addr_len);
+
+        if (slave_socket < 0)
+        {
+            perror("accept");
+        }
+
+        auto process_request_lambda = [this, slave_socket, client_addr]()
+        {
+            this->_process_request(slave_socket, client_addr);
+        };
+
+        std::thread process_request_thread(process_request_lambda);
+
+        process_request_thread.detach();
     }
 }

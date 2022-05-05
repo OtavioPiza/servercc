@@ -9,8 +9,16 @@
 #define DEFAULT_PORT 8080
 #endif
 
+#ifndef ITERATIVE_MODE
+#define ITERATIVE_MODE 0
+#endif
+
+#ifndef THREAD_MODE
+#define THREAD_MODE 1
+#endif
+
 #ifndef DEFAULT_MODE
-#define DEFAULT_MODE 0
+#define DEFAULT_MODE ITERATIVE_MODE
 #endif
 
 #ifndef REQUEST_READ_BUFFER_SIZE
@@ -95,6 +103,12 @@ namespace restpp
          * theme one at a time
          */
         void _run_in_iterative_mode();
+
+        /**
+         * @brief runs the server in thread mode, listening for requests and processing
+         * them in a separate thread
+         */
+        void _run_in_thread_mode();
     };
 }
 
