@@ -3,7 +3,7 @@
 
 namespace restpp
 {
-    class Response
+    class Request
     {
     };
 }
