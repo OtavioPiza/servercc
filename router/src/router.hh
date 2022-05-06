@@ -13,7 +13,7 @@ namespace restpp {
     class Router {
 
         public:
-            void handle(std::string method, std::string path, bool (*handler)(restpp::Response &, restpp::Request &));
+            void handle(std::string method, std::string path, void (*handler)(restpp::Request &, restpp::Response &));
 
         private:
             Handler handler;

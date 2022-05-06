@@ -12,12 +12,12 @@ namespace restpp
     class Handler
     {
     public:
-        bool (*handle_get)(Response &, Response &);        // Handler for GET requests
-        bool (*handle_post)(Response &, Response &);       // Handler for POST requests
-        bool (*handle_put)(Response &, Response &);        // Handler for PUT requests
-        bool (*handle_patch)(Response &, Response &);      // Handler for PATCH requests
-        bool (*handle_delete)(Response &, Response &);     // Handler for DELETE requests
-        bool (*handle_options)(Response &, Response &);    // Handler for OPTIONS requests
+        void (*handle_get)(Request &, Response &);        // Handler for GET requests
+        void (*handle_post)(Request &, Response &);       // Handler for POST requests
+        void (*handle_put)(Request &, Response &);        // Handler for PUT requests
+        void (*handle_patch)(Request &, Response &);      // Handler for PATCH requests
+        void (*handle_delete)(Request &, Response &);     // Handler for DELETE requests
+        void (*handle_options)(Request &, Response &);    // Handler for OPTIONS requests
         std::vector<std::pair<std::string, Handler>> next; // Next handlers
 
         /**
