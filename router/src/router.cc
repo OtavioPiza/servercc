@@ -1,9 +1,15 @@
-#include <string>
 #include <sstream>
 
 #include "router.hh"
 
-void restpp::Router::handle(std::string method, std::string path, void (*handler)(restpp::Request &, restpp::Response &))
+/**
+ * @brief adds a handler for a specific verb and path
+ * 
+ * @param method verb
+ * @param path path
+ * @param handler handler function
+ */
+void restpp::Router::handle(std::string method, std::string path, std::function<void(Request &, Response &)> handler)
 {
     /* parse path */
 
@@ -18,6 +24,8 @@ void restpp::Router::handle(std::string method, std::string path, void (*handler
             path_parts.push_back(part);
         }
     }
+
+    /* create or get handler for path */
 
     Handler *current_handler = &this->handler;
 
@@ -49,57 +57,13 @@ void restpp::Router::handle(std::string method, std::string path, void (*handler
 
     /* set handler */
 
-    if (method == "GET")
+    auto it = current_handler->handlers.find(method);
+    if (it != current_handler->handlers.end())
     {
-        if (current_handler->handle_get)
-        {
-            throw std::runtime_error("Handler for GET already set for path " + path);
-        }
-        current_handler->handle_get = handler;
+        it->second = handler;
     }
-
-    if (method == "POST")
+    else
     {
-        if (current_handler->handle_post)
-        {
-            throw std::runtime_error("Handler for POST already set for path " + path);
-        }
-        current_handler->handle_post = handler;
-    }
-
-    if (method == "PUT")
-    {
-        if (current_handler->handle_put)
-        {
-            throw std::runtime_error("Handler for PUT already set for path " + path);
-        }
-        current_handler->handle_put = handler;
-    }
-
-    if (method == "PATCH")
-    {
-        if (current_handler->handle_patch)
-        {
-            throw std::runtime_error("Handler for PATCH already set for path " + path);
-        }
-        current_handler->handle_patch = handler;
-    }
-
-    if (method == "DELETE")
-    {
-        if (current_handler->handle_delete)
-        {
-            throw std::runtime_error("Handler for DELETE already set for path " + path);
-        }
-        current_handler->handle_delete = handler;
-    }
-
-    if (method == "OPTIONS")
-    {
-        if (current_handler->handle_options)
-        {
-            throw std::runtime_error("Handler for OPTIONS already set for path " + path);
-        }
-        current_handler->handle_options = handler;
+        throw std::runtime_error("Already defined handler for " + method + " " + path);
     }
 }
