@@ -4,20 +4,49 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <unordered_map>
 
+/* verbs definitions */
+
+#ifndef GET
+#define GET "GET"
+#endif
+
+#ifndef POST
+#define POST "POST"
+#endif
+
+#ifndef PUT
+#define PUT "PUT"
+#endif
+
+#ifndef PATCH
+#define PATCH "PATCH"
+#endif
+
+#ifndef DELETE
+#define DELETE "DELETE"
+#endif
+
+#ifndef OPTIONS
+#define OPTIONS "OPTIONS"
+#endif
+
+/* restpp */
 
 namespace restpp
 {
-
+    /**
+     * @brief The Handler class
+     * @details The Handler class is a simple handler for the Router. It is used to define actions 
+     * for specific verbs. It is also used to store handlers for paths lower in the hierarchy.
+     */
     class Handler
     {
     public:
-        void (*handle_get)(Request &, Response &);        // Handler for GET requests
-        void (*handle_post)(Request &, Response &);       // Handler for POST requests
-        void (*handle_put)(Request &, Response &);        // Handler for PUT requests
-        void (*handle_patch)(Request &, Response &);      // Handler for PATCH requests
-        void (*handle_delete)(Request &, Response &);     // Handler for DELETE requests
-        void (*handle_options)(Request &, Response &);    // Handler for OPTIONS requests
+        std::unordered_map<std::string,
+                           std::function<void(Request &, Response &)>>
+            handlers;                                      // Handlers
         std::vector<std::pair<std::string, Handler>> next; // Next handlers
 
         /**
@@ -25,7 +54,6 @@ namespace restpp
          */
         Handler();
     };
-
 }
 
 #endif
