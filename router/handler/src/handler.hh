@@ -5,8 +5,6 @@
 #include <string>
 #include <utility>
 
-#include "../../request/src/request.hh"
-#include "../../response/src/response.hh"
 
 namespace restpp
 {

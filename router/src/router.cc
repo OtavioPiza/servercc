@@ -3,8 +3,6 @@
 
 #include "router.hh"
 
-
-
 void restpp::Router::handle(std::string method, std::string path, bool (*handler)(int, int))
 {
     /* parse path */

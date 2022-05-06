@@ -5,12 +5,15 @@
 
 #include "../handler/src/handler.hh"
 
+#include "../../request/src/request.hh"
+#include "../../response/src/response.hh"
+
 namespace restpp {
 
     class Router {
 
         public:
-            void handle(std::string method, std::string path, bool (*handler)(int, int));
+            void handle(std::string method, std::string path, bool (*handler)(restpp::Response &, restpp::Request &));
 
         private:
             Handler handler;

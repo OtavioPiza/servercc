@@ -2,21 +2,16 @@
 #include "server/src/server.hh"
 #include "router/src/router.hh"
 
+#include "request/src/request.hh"
+#include "response/src/response.hh"
+
 int main(int argc, char **argv)
 {
 	restpp::Server s(8080, THREAD_MODE);
 
-	s.router.handle("GET", "/test", [](int, int)
-					{ return true; });
+	s.router.handle("GET", "/", [](restpp::Response &res, restpp::Request &req) {
 
-	s.router.handle("GET", "/", [](int, int)
-					{ return true; });
-
-	s.router.handle("GET", "/test/hello", [](int, int)
-					{ return true; });
-
-	s.router.handle("GET", "/test/hello/world", [](int, int)
-					{ return true; });
+	});
 
 	s.run();
 	return 0;
