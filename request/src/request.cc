@@ -74,4 +74,27 @@ void restpp::Request::parse_request()
 
         this->headers[key] = value;
     }
+
+    /* blank line */
+
+    std::getline(ss, line);
+
+    /* parse body */
+
+    while (std::getline(ss, line))
+    {
+        if (line.empty())
+        {
+            break;
+        }
+
+        std::stringstream ss_line(line);
+        std::string key;
+        std::string value;
+
+        std::getline(ss_line, key, ':');
+        std::getline(ss_line, value);
+
+        this->body[key] = value;
+    }
 }
