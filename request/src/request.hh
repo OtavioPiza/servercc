@@ -1,10 +1,36 @@
 #ifndef REQUEST_HH
 #define REQUEST_HH
 
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 namespace restpp
 {
     class Request
     {
+    public:
+        std::string method;                                   // request method
+        std::string version;                                  // request version
+        std::vector<std::string> path;                        // request path
+        std::unordered_map<std::string, std::string> params;  // request params
+        std::unordered_map<std::string, std::string> headers; // request headers
+        std::unordered_map<std::string, std::string> body;    // request body
+
+        /**
+         * @brief Construct a new Request object
+         *
+         * @param raw_request The raw request string
+         */
+        Request(std::string raw_request);
+
+    private:
+        std::string raw_request; // raw request string
+
+        /**
+         * @brief parses the raw request string
+         */
+        void parse_request();
     };
 }
 
