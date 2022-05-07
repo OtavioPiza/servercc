@@ -2,7 +2,6 @@
 #define ROUTER_HH
 
 #include <string>
-#include <functional>
 
 #include "../handler/src/handler.hh"
 
@@ -29,7 +28,15 @@ namespace restpp
          * @param path path
          * @param handler handler function
          */
-        void handle(std::string method, std::string path, std::function<void(Request &, Response &)> handler);
+        void handle(std::string method, std::string path, handler_t *handler);
+
+        /**
+         * @brief processses a request and sends a response
+         * 
+         * @param raw_request request string
+         * @param socket socket fd
+         */
+        void process(std::string raw_request, int socket);
 
     private:
         Handler handler;
