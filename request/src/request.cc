@@ -1,9 +1,10 @@
 #include "request.hh"
 #include <sstream>
 
-restpp::Request::Request(std::string raw_request)
+restpp::Request::Request(std::string raw_request, int socket)
 {
     this->raw_request = raw_request;
+    this->socket = socket;
     this->parse_request();
 }
 
@@ -43,6 +44,7 @@ void restpp::Request::parse_request()
 
         std::stringstream ss_path(raw_path);
         std::string segment;
+        this->path.push_back(""); // represents the root route
 
         while (std::getline(ss_path, segment, '/'))
         {

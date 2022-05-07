@@ -10,6 +10,8 @@ namespace restpp
     class Request
     {
     public:
+        int socket;                                           // socket fd
+        std::string raw_request;                              // raw request string
         std::string method;                                   // request method
         std::string version;                                  // request version
         std::vector<std::string> path;                        // request path
@@ -21,12 +23,11 @@ namespace restpp
          * @brief Construct a new Request object
          *
          * @param raw_request The raw request string
+         * @param socket socket fd
          */
-        Request(std::string raw_request);
+        Request(std::string raw_request, int socket);
 
     private:
-        std::string raw_request; // raw request string
-
         /**
          * @brief parses the raw request string
          */
