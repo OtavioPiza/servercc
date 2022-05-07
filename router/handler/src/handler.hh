@@ -6,6 +6,9 @@
 #include <utility>
 #include <unordered_map>
 
+#include "../../../request/src/request.hh"
+#include "../../../response/src/response.hh"
+
 /* verbs definitions */
 
 #ifndef GET
@@ -36,17 +39,17 @@
 
 namespace restpp
 {
+    typedef void handler_t(restpp::Request &, restpp::Response &);
+
     /**
      * @brief The Handler class
-     * @details The Handler class is a simple handler for the Router. It is used to define actions 
+     * @details The Handler class is a simple handler for the Router. It is used to define actions
      * for specific verbs. It is also used to store handlers for paths lower in the hierarchy.
      */
     class Handler
     {
     public:
-        std::unordered_map<std::string,
-                           std::function<void(Request &, Response &)>>
-            handlers;                                      // Handlers
+        std::unordered_map<std::string, handler_t*> handlers; 
         std::vector<std::pair<std::string, Handler>> next; // Next handlers
 
         /**
