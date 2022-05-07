@@ -5,12 +5,15 @@
 
 int main(int argc, char **argv)
 {
-	restpp::Server s(8080, THREAD_MODE);
+	restpp::Server s(8080);
 
 	s.router.handle(GET, "/", [](restpp::Request &req, restpp::Response &res) {
-		
+		std::cout << "let's go!!!" << std::endl;
+	});
+
+	s.router.handle(GET, "/hello", [](restpp::Request &req, restpp::Response &res) {
+		std::cout << "let's go!!!" << std::endl;
 	});
 
 	s.run();
-	return 0;
 }
