@@ -177,6 +177,7 @@ void restpp::Server::_process_request(int slave_socket, struct sockaddr_in clien
     }
     else
     {
+        this->router.process(request, slave_socket);
         close(slave_socket);
     }
 }
