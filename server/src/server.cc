@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 
+#include "../../util/logger/src/logger.hh"
 #include "server.hh"
 #include "../../util/logger/src/logger.hh"
 
@@ -141,6 +142,10 @@ bool restpp::Server::_read_request(int slave_socket, std::string &request)
             {
                 break;
             }
+
+            /* print */
+
+            restpp::log_warn("Request: \n" + std::string(buffer, bytes_read) + "===", "Server");
         }
     };
 
