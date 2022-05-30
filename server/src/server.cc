@@ -136,9 +136,10 @@ bool restpp::Server::_read_request(int slave_socket, std::string &request)
 
             /* check if request is terminated */
 
-            if (request.length() >= 4 &&
-                request[request.length() - 4] == '\r' && request[request.length() - 3] == '\n' &&
-                request[request.length() - 2] == '\r' && request[request.length() - 1] == '\n')
+            if (request.length() < REQUEST_READ_BUFFER_SIZE ||
+                (request.length() >= 4 &&
+                 request[request.length() - 4] == '\r' && request[request.length() - 3] == '\n' &&
+                 request[request.length() - 2] == '\r' && request[request.length() - 1] == '\n'))
             {
                 break;
             }
@@ -227,7 +228,7 @@ void restpp::Server::_run_in_thread_mode()
         auto slave_socket = accept(this->master_socket,
                                    (struct sockaddr *)&client_addr,
                                    (socklen_t *)&client_addr_len);
-        
+
         if (slave_socket < 0)
         {
             perror("accept");
