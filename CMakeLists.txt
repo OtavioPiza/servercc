@@ -17,8 +17,15 @@ add_executable("${PROJECT_NAME}" main.cc)
 
 # libs
 
-add_subdirectory(llhttp)
-target_link_libraries(${PROJECT_NAME} llhttp)
+# include(FetchContent)
+
+# FetchContent_Declare(llhttp
+#   URL "https://github.com/nodejs/llhttp/archive/refs/tags/release/v6.0.6.tar.gz")  # Using version 6.0.5
+
+# FetchContent_MakeAvailable(llhttp)
+
+# target_link_libraries(${PROJECT_NAME} llhttp)
 
 add_subdirectory(server)
 target_link_libraries("${PROJECT_NAME}" server)
+

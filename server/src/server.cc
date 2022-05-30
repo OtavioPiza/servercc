@@ -19,6 +19,7 @@
 #include "../../util/logger/src/logger.hh"
 #include "server.hh"
 #include "../../util/logger/src/logger.hh"
+#include "llhttp.h"
 
 /* public methods */
 
@@ -30,6 +31,8 @@
  */
 restpp::Server::Server(unsigned short port, unsigned char mode)
 {
+    /* configure operation */
+
     this->port = port;
     this->mode = mode;
     this->running = false;
@@ -76,6 +79,10 @@ restpp::Server::Server(unsigned short port, unsigned char mode)
         perror("listen");
         throw "Error listening on socket";
     }
+
+    /* setup request parser */
+
+    llhttp_settings_init(&this->parser_settigns);
 
     restpp::log_info("Server started on port " + std::to_string(this->port), "Server");
 }

@@ -81,6 +81,12 @@ void restpp::Router::handle(std::string method, std::string path, handler_t *han
 void restpp::Router::process(std::string raw_request, int socket)
 {
     Request request(raw_request, socket);
+
+    if (request.error.size() > 0)
+    {
+        fprintf(stderr, "Error: %s\n", request.error.c_str());
+    }
+
     Response response(socket);
 
     /* dfs path */

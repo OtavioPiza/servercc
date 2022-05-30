@@ -32,6 +32,7 @@
 #include <string>
 
 #include "../../router/src/router.hh"
+#include "llhttp.h"
 
 namespace restpp
 {
@@ -77,11 +78,13 @@ namespace restpp
         void run();
 
     private:
-        unsigned short port;             // Port to listen on
-        unsigned char mode;              // Mode to run in
-        struct sockaddr_in *server_addr; // Server address
-        int master_socket;               // Master socket
-        bool running;                    // Running flag
+        unsigned short port;               // Port to listen on
+        unsigned char mode;                // Mode to run in
+        struct sockaddr_in *server_addr;   // Server address
+        int master_socket;                 // Master socket
+        bool running;                      // Running flag
+        llhttp_settings_t parser_settigns; // Parser settings
+        llhttp_t parser;                   // Parser
 
         /**
          * @brief reads a request from a socket; if the request times out, the socket is closed

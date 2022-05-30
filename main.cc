@@ -3,19 +3,17 @@
 #include "server/src/server.hh"
 #include "response/src/response.hh"
 
-#include "llhttp/src/llhttp.h"
+using restpp::Server, restpp::Response, restpp::Request;
 
 int main(int argc, char **argv)
 {
-	restpp::Server s(8080);
+	Server s(8080);
 
-	s.router.handle(GET, "/", [](restpp::Request &req, restpp::Response &res) {
-		std::cout << "let's go!!!" << std::endl;
-	});
+	s.router.handle(GET, "/", [](Request &req, Response &res)
+					{ std::cout << "let's go!!!" << std::endl; });
 
-	s.router.handle(GET, "/hello", [](restpp::Request &req, restpp::Response &res) {
-		std::cout << "let's go!!!" << std::endl;
-	});
+	s.router.handle(GET, "/hello", [](Request &req, Response &res)
+					{ std::cout << "let's go!!!" << std::endl; });
 
 	s.run();
 }

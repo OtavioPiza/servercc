@@ -11,6 +11,7 @@ namespace restpp
     {
     public:
         int socket;                                           // socket fd
+        std::string error;                                    // error message
         std::string raw_request;                              // raw request string
         std::string method;                                   // request method
         std::string version;                                  // request version
@@ -28,6 +29,9 @@ namespace restpp
         Request(std::string raw_request, int socket);
 
     private:
+        // llhttp_t parser;
+        // llhttp_settings_t settings;
+
         /**
          * @brief parses the raw request string
          */
