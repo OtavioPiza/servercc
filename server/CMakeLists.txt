@@ -8,7 +8,7 @@ target_include_directories(server PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 target_link_libraries(server llhttp)
 
-add_subdirectory("../router" router)
+add_subdirectory("router" router)
 target_link_libraries(server router)
 
 add_subdirectory("../util/logger" logger)

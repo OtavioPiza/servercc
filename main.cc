@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 
 #include "server/src/server.hh"
-#include "response/src/response.hh"
+#include "server/response/src/response.hh"
 
 using restpp::Server, restpp::Response, restpp::Request;
 

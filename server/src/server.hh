@@ -31,7 +31,7 @@
 
 #include <string>
 
-#include "../../router/src/router.hh"
+#include "../router/src/router.hh"
 #include "llhttp.h"
 
 namespace restpp
