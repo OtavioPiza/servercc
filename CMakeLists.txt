@@ -1,22 +1,18 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.22.1)
 
-project(rest++ VERSION 1.0.0)
+project(servercc)
 
-if (!UNIX)
-    message(FATAL_ERROR "This project is only supported on UNIX")
+add_library(${PROJECT_NAME} INTERFACE)
+
+target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(
+    ${PROJECT_NAME}
+    INTERFACE
+        server
+)
+
+if (${PROJECT_IS_TOP_LEVEL})
+    enable_testing()
 endif()
 
-# configure c++ standard and flags
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-
-#  executables
-
-add_executable("${PROJECT_NAME}" main.cc)
-
-# libs
-
-add_subdirectory(server)
-target_link_libraries("${PROJECT_NAME}" server)
-
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
