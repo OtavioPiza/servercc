@@ -1,0 +1,3 @@
+[submodule "lib/libcc"]
+	path = lib/libcc
+	url = git@github.com:OtavioPiza/libcc.git
