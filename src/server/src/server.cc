@@ -1,9 +1,9 @@
 #include <cstring>
 #include <stdio.h>
 
-#include "../include/server.h"
-#include "defaults.h"
 #include "default_trie.h"
+#include "defaults.h"
+#include "server.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::libcc::utils::StatusOr;
