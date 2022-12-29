@@ -6,8 +6,10 @@
 
 #include "default_trie.h"
 #include "server_mode.h"
+#include "status_or.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
+using ostp::libcc::utils::StatusOr;
 using ostp::severcc::ServerMode;
 
 namespace ostp::severcc
@@ -15,18 +17,6 @@ namespace ostp::severcc
     /// A generic server to handle multiple protocols.
     class Server
     {
-    private:
-        /// Associates a communication protocol with a processor id that handles it.
-        DefaultTrie<char /* protocol */, int /* processor id */> protocol_processors;
-
-        /// \todo Add a list of processors.
-
-        const int16_t port;
-        const ServerMode mode;
-        struct sockaddr_in *server_addr;
-        int server_socket;
-        
-
     public:
         /// Constructor for the server.
         ///
@@ -46,6 +36,23 @@ namespace ostp::severcc
 
         /// Destructor for the server.
         ~Server();
+
+        /// Runs the server.
+        ///
+        /// Returns:
+        ///     A status code indicating the success of the operation and the port the server is
+        ///     listening on.
+        [[nodiscard]] StatusOr<const int16_t> run();
+
+    private:
+        /// Associates a communication protocol with a processor id that handles it.
+        DefaultTrie<char /* protocol */, int /* processor id */> protocol_processors;
+
+        /// \todo Add a list of processors.
+        const int16_t port;
+        const ServerMode mode;
+        struct sockaddr_in *server_addr;
+        int server_socket;
     };
 
 } // namespace ostp::severcc

@@ -6,6 +6,8 @@
 #include "default_trie.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
+using ostp::libcc::utils::StatusOr;
+using ostp::libcc::utils::Status;
 using ostp::severcc::Server;
 using ostp::severcc::ServerMode;
 
@@ -64,5 +66,11 @@ Server::Server() : Server(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE) {}
 Server::~Server()
 {
     delete this->server_addr;
+}
+
+// See server.h for documentation.
+[[nodiscard]] StatusOr<const int16_t> Server::run()
+{
+    return StatusOr<const int16_t>(Status::ERROR, "Not implemented.", -1);
 }
 
