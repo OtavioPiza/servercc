@@ -18,3 +18,4 @@ if (${PROJECT_IS_TOP_LEVEL})
 endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
+add_subdirectory(${PROJECT_SOURCE_DIR}/lib/libcc libcc)

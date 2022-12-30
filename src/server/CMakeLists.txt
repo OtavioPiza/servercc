@@ -10,5 +10,3 @@ target_include_directories(
 )
 
 target_link_libraries(server PRIVATE libcc)
-
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/libcc libcc)
