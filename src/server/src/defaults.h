@@ -6,7 +6,11 @@
 #endif
 
 #ifndef SERVERCC_DEFAULT_MODE
-#define SERVERCC_DEFAULT_MODE ServerMode::SINGLE_THREAD
+#define SERVERCC_DEFAULT_MODE ServerMode::SYNC
+#endif
+
+#ifndef SERVERCC_BUFFER_SIZE
+#define SERVERCC_BUFFER_SIZE 1024
 #endif
 
 #endif

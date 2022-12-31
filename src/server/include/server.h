@@ -3,13 +3,17 @@
 
 #include <stdint.h>
 #include <netinet/in.h>
+#include <functional>
+#include <optional>
 
 #include "default_trie.h"
 #include "server_mode.h"
+#include "server_request.h"
 #include "status_or.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::libcc::utils::StatusOr;
+using ostp::severcc::Request;
 using ostp::severcc::ServerMode;
 
 namespace ostp::severcc
@@ -42,13 +46,27 @@ namespace ostp::severcc
         /// Returns:
         ///     A status code indicating the success of the operation and the port the server is
         ///     listening on.
-        [[nodiscard]] StatusOr<const int16_t> run();
+        [[noreturn]] void run();
+
+        /// Registers or updates a protocol with a processor.
+        ///
+        /// Arguments:
+        ///     protocol: The protocol to register.
+        ///     processor: The processor to handle the protocol.
+        void register_processor(
+            const std::string protocol,
+            std::function<void(const Request)> processor);
+
+        /// Registers the default processor
+        ///
+        /// Arguments:
+        ///     processor: The default processor to handle unregistered protocols.
+        void register_default_processor(std::function<void(const Request)> processor);
 
     private:
         /// Associates a communication protocol with a processor id that handles it.
-        DefaultTrie<char /* protocol */, int /* processor id */> protocol_processors;
+        DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
 
-        /// \todo Add a list of processors.
         const int16_t port;
         const ServerMode mode;
         struct sockaddr_in *server_addr;

@@ -1,19 +1,22 @@
 #include <cstring>
 #include <stdio.h>
+#include <vector>
 
 #include "default_trie.h"
 #include "defaults.h"
 #include "server.h"
+#include "logger.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
-using ostp::libcc::utils::StatusOr;
+using ostp::libcc::utils::log_info;
 using ostp::libcc::utils::Status;
+using ostp::libcc::utils::StatusOr;
 using ostp::severcc::Server;
 using ostp::severcc::ServerMode;
 
 // See server.h for documentation.
 Server::Server(int16_t port, ServerMode mode)
-    : protocol_processors(-1), port(port), mode(mode)
+    : protocol_processors(nullptr), port(port), mode(mode)
 {
     this->server_addr = new struct sockaddr_in;
     memset(this->server_addr, 0, sizeof(struct sockaddr_in));
@@ -53,7 +56,6 @@ Server::Server(int16_t port, ServerMode mode)
         perror("listen");
         throw "Error listening on socket";
     }
-
 }
 
 // See server.h for documentation.
@@ -69,8 +71,64 @@ Server::~Server()
 }
 
 // See server.h for documentation.
-[[nodiscard]] StatusOr<const int16_t> Server::run()
+[[noreturn]] void Server::run()
 {
-    return StatusOr<const int16_t>(Status::ERROR, "Not implemented.", -1);
+    int client_socket;              // F.D. for the client socket.
+    struct sockaddr_in client_addr; // Address of the client.
+    socklen_t client_addr_len = sizeof(struct sockaddr_in);
+
+    while (true)
+    {
+        // Try to accept a connection.
+        if ((client_socket = accept(this->server_socket,
+                                    (struct sockaddr *)&client_addr,
+                                    &client_addr_len)) < 0)
+        {
+            perror("accept");
+            continue;
+        }
+        std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
+
+        // Try to read from the client.
+        if ((recv(client_socket, &buffer[0], buffer.size(), 0)) < 0)
+        {
+            perror("recv");
+            close(client_socket);
+            continue;
+        }
+
+        // Find the first whitespace character.
+        int i;
+        for (i = 0; i < buffer.size() && isspace(buffer[i]); i++)
+            ;
+
+        // Look for the processor that handles the provided protocol and send the request to it.
+        auto processor = this->protocol_processors.get(&buffer[0], i);
+        if (processor)
+        {
+            processor(
+                Request{
+                    client_socket,
+                    std::string(buffer.begin(), buffer.begin() + i),
+                    std::string(buffer.begin(), buffer.end())});
+        }
+        else
+        {
+            close(client_socket);
+        }
+    }
 }
 
+// See server.h for documentation.
+void Server::register_processor(
+    std::string protocol,
+    std::function<void(const Request)> processor)
+{
+    this->protocol_processors.insert(protocol.c_str(), protocol.length(), processor);
+}
+
+// See server.h for documentation.
+void Server::register_default_processor(std::function<void(const Request)> processor)
+{
+    this->protocol_processors.update_default_return(processor);
+}
