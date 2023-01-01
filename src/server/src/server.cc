@@ -1,16 +1,11 @@
 #include <cstring>
-#include <stdio.h>
 #include <vector>
 
 #include "default_trie.h"
 #include "defaults.h"
 #include "server.h"
-#include "logger.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
-using ostp::libcc::utils::log_info;
-using ostp::libcc::utils::Status;
-using ostp::libcc::utils::StatusOr;
 using ostp::severcc::Server;
 using ostp::severcc::ServerMode;
 
