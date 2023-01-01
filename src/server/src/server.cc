@@ -99,7 +99,7 @@ Server::~Server()
 
         // Find the first whitespace character.
         int i;
-        for (i = 0; i < buffer.size() && isspace(buffer[i]); i++)
+        for (i = 0; i < buffer.size() && !isspace(buffer[i]); i++)
             ;
 
         // Look for the processor that handles the provided protocol and send the request to it.
