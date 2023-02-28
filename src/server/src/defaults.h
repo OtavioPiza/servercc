@@ -13,4 +13,8 @@
 #define SERVERCC_BUFFER_SIZE 1024
 #endif
 
+#ifndef SERVERCC_DEFAULT_BACKLOG
+#define SERVERCC_DEFAULT_BACKLOG 10
+#endif
+
 #endif
