@@ -14,7 +14,8 @@ using ostp::severcc::ServerMode;
 Server::Server(int16_t port, ServerMode mode)
     : protocol_processors(nullptr), port(port), mode(mode) {
     // Setup hints.
-    struct addrinfo *result, *hints = new struct addrinfo;
+    struct addrinfo *result = nullptr, *hints = new struct addrinfo;
+    memset(hints, 0, sizeof(struct addrinfo));
     hints->ai_family = AF_UNSPEC;
     hints->ai_socktype = SOCK_STREAM;
     hints->ai_flags = AI_PASSIVE;
@@ -26,7 +27,7 @@ Server::Server(int16_t port, ServerMode mode)
     }
 
     // Free hints.
-    freeaddrinfo(hints);
+    delete hints;
     hints = nullptr;
 
     // Bind to the first address.
@@ -80,8 +81,7 @@ Server::Server(int16_t port, ServerMode mode)
 
     // Save the server address.
     this->server_socket_fd = server_socket_fd;
-    this->server_addr = new struct sockaddr_in;
-    memcpy(this->server_addr, addr->ai_addr, sizeof(struct sockaddr_in));
+    this->server_addr = addr;
 }
 
 // See server.h for documentation.
@@ -91,7 +91,7 @@ Server::Server(int16_t port) : Server(port, SERVERCC_DEFAULT_MODE) {}
 Server::Server() : Server(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE) {}
 
 // See server.h for documentation.
-Server::~Server() { delete this->server_addr; }
+Server::~Server() { close(this->server_socket_fd); }
 
 // See server.h for documentation.
 [[noreturn]] void Server::run() {

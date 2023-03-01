@@ -31,6 +31,15 @@ using ostp::severcc::ServerMode;
 namespace ostp::severcc {
 /// A generic server to handle multiple protocols.
 class Server {
+   private:
+    /// Associates a communication protocol with a processor id that handles it.
+    DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
+
+    const int16_t port;
+    const ServerMode mode;
+    struct addrinfo *server_addr;
+    int server_socket_fd;
+
    public:
     /// Constructor for the server.
     ///
@@ -71,15 +80,6 @@ class Server {
     /// Arguments:
     ///     processor: The default processor to handle unregistered protocols.
     void register_default_processor(std::function<void(const Request)> processor);
-
-   private:
-    /// Associates a communication protocol with a processor id that handles it.
-    DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
-
-    const int16_t port;
-    const ServerMode mode;
-    struct sockaddr_in *server_addr;
-    int server_socket_fd;
 };
 
 }  // namespace ostp::severcc
