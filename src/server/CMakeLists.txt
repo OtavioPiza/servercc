@@ -6,7 +6,11 @@ target_link_libraries(
     INTERFACE
         config
         tcp
+        types
+        udp
 )
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/config config)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tcp tcp)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/types types)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/udp udp)

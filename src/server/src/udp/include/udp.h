@@ -1,5 +1,5 @@
-#ifndef SERVERCC_SERVER_TCP_H
-#define SERVERCC_SERVER_TCP_H
+#ifndef SERVERCC_SERVER_UDP_H
+#define SERVERCC_SERVER_UDP_H
 
 #include "abstract_server.h"
 #include "default_trie.h"
@@ -13,7 +13,7 @@ using ostp::severcc::server::ServerMode;
 
 namespace ostp::severcc::server {
 /// A generic server to handle multiple protocols.
-class TcpServer : virtual public Server {
+class UdpServer : virtual public Server {
    private:
     /// Associates a communication protocol with a processor id that handles it.
     DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
@@ -29,19 +29,19 @@ class TcpServer : virtual public Server {
     /// Arguments:
     ///     port: The port the server will listen on.
     ///     mode: The mode the server will run in.
-    TcpServer(int16_t port, ServerMode mode);
+    UdpServer(int16_t port, ServerMode mode);
 
     /// Constructs a server with default mode.
     ///
     /// Arguments:
     ///     port: The port the server will listen on.
-    TcpServer(int16_t port);
+    UdpServer(int16_t port);
 
     /// Constructs a server with default port and mode.
-    TcpServer();
+    UdpServer();
 
     /// Destructor for the server.
-    ~TcpServer();
+    ~UdpServer();
 
     // See server.h for documentation.
     [[noreturn]] void run();

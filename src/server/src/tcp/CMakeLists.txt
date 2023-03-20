@@ -14,6 +14,6 @@ target_link_libraries(
     PRIVATE 
         config
         libcc
-        server
+        types
 )
 

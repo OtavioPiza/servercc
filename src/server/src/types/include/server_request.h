@@ -1,5 +1,5 @@
-#ifndef SERVERCC_REQUEST_H
-#define SERVERCC_REQUEST_H
+#ifndef SERVERCC_SERVER_REQUEST_H
+#define SERVERCC_SERVER_REQUEST_H
 
 #include <memory>
 
