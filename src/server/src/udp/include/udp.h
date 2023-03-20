@@ -24,16 +24,24 @@ class UdpServer : virtual public Server {
     /// The mode the server will run in.
     const ServerMode mode;
 
+    /// The group address for the server to listen on for multicast.
+    const char *group;
+
     /// The address info for the server.
     struct addrinfo *server_addr;
 
     /// The socket file descriptor for the server.
     int server_socket_fd;
 
-    /// The group address for the server to listen on for multicast.
-    struct sockaddr_in group_addr;
-
    public:
+    /// Constructor for the server.
+    ///
+    /// Arguments:
+    ///     port: The port the server will listen on.
+    ///     mode: The mode the server will run in.
+    ///     group_address: The group address the server will listen on.
+    UdpServer(int16_t port, ServerMode mode, char *group_address);
+
     /// Constructor for the server.
     ///
     /// Arguments:

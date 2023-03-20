@@ -11,8 +11,8 @@ using ostp::severcc::server::ServerMode;
 using ostp::severcc::server::UdpServer;
 
 // See tcp.h for documentation.
-UdpServer::UdpServer(int16_t port, ServerMode mode)
-    : protocol_processors(nullptr), port(port), mode(mode) {
+UdpServer::UdpServer(int16_t port, ServerMode mode, char *group)
+    : protocol_processors(nullptr), port(port), mode(mode), group(group) {
     // Setup hints for udp with multicast.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
     memset(hints, 0, sizeof(struct addrinfo));
@@ -29,6 +29,11 @@ UdpServer::UdpServer(int16_t port, ServerMode mode)
     // Free hints.
     delete hints;
     hints = nullptr;
+
+    // Setup the group address.
+    struct ip_mreq mreq;
+    mreq.imr_multiaddr.s_addr = inet_addr(this->group);
+    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
     // Bind to the first address.
     struct addrinfo *addr = result;
@@ -61,6 +66,14 @@ UdpServer::UdpServer(int16_t port, ServerMode mode)
             continue;
         }
 
+        // Try to join the multicast group.
+        if (setsockopt(server_socket_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
+            perror("setsockopt");
+            close(server_socket_fd);
+            addr = addr->ai_next;
+            continue;
+        }
+
         // Break if we were able to bind.
         break;
     }
@@ -83,6 +96,9 @@ UdpServer::UdpServer(int16_t port, ServerMode mode)
     this->server_socket_fd = server_socket_fd;
     this->server_addr = addr;
 }
+
+// See tcp.h for documentation.
+UdpServer::UdpServer(int16_t port, ServerMode mode) : UdpServer(port, mode, "0.0.0.0") {}
 
 // See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port) : UdpServer(port, SERVERCC_DEFAULT_MODE) {}
@@ -133,7 +149,7 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
 
 // See server.h for documentation.
 void UdpServer::register_processor(std::string protocol,
-                                std::function<void(const Request)> processor) {
+                                   std::function<void(const Request)> processor) {
     this->protocol_processors.insert(protocol.c_str(), protocol.length(), processor);
 }
 
