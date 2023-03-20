@@ -8,10 +8,10 @@
 
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::severcc::server::ServerMode;
-using ostp::severcc::server::tcp::Server;
+using ostp::severcc::server::TcpServer;
 
-// See server.h for documentation.
-Server::Server(int16_t port, ServerMode mode)
+// See tcp.h for documentation.
+TcpServer::TcpServer(int16_t port, ServerMode mode)
     : protocol_processors(nullptr), port(port), mode(mode) {
     // Setup hints.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
@@ -84,17 +84,17 @@ Server::Server(int16_t port, ServerMode mode)
     this->server_addr = addr;
 }
 
-// See server.h for documentation.
-Server::Server(int16_t port) : Server(port, SERVERCC_DEFAULT_MODE) {}
+// See tcp.h for documentation.
+TcpServer::TcpServer(int16_t port) : TcpServer(port, SERVERCC_DEFAULT_MODE) {}
+
+// See tcp.h for documentation.
+TcpServer::TcpServer() : TcpServer(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE) {}
+
+// See tcp.h for documentation.
+TcpServer::~TcpServer() { close(this->server_socket_fd); }
 
 // See server.h for documentation.
-Server::Server() : Server(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE) {}
-
-// See server.h for documentation.
-Server::~Server() { close(this->server_socket_fd); }
-
-// See server.h for documentation.
-[[noreturn]] void Server::run() {
+[[noreturn]] void TcpServer::run() {
     int client_socket_fd;            // F.D. for the client socket.
     struct sockaddr_in client_addr;  // Address of the client.
     socklen_t client_addr_len = sizeof(struct sockaddr_in);
@@ -132,12 +132,12 @@ Server::~Server() { close(this->server_socket_fd); }
 }
 
 // See server.h for documentation.
-void Server::register_processor(std::string protocol,
+void TcpServer::register_processor(std::string protocol,
                                 std::function<void(const Request)> processor) {
     this->protocol_processors.insert(protocol.c_str(), protocol.length(), processor);
 }
 
 // See server.h for documentation.
-void Server::register_default_processor(std::function<void(const Request)> processor) {
+void TcpServer::register_default_processor(std::function<void(const Request)> processor) {
     this->protocol_processors.update_default_return(processor);
 }

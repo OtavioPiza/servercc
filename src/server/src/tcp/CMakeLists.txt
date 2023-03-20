@@ -9,5 +9,11 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(tcp PRIVATE config)
-target_link_libraries(tcp PRIVATE libcc)
+target_link_libraries(
+    tcp
+    PRIVATE 
+        config
+        libcc
+        server
+)
+

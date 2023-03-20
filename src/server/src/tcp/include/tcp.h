@@ -1,36 +1,19 @@
 #ifndef SERVERCC_SERVER_TCP_H
 #define SERVERCC_SERVER_TCP_H
 
-#include <arpa/inet.h>
-#include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
-#include <functional>
-#include <optional>
-
 #include "default_trie.h"
-#include "server_mode.h"
-#include "server_request.h"
+#include "server.h"
 #include "status_or.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::libcc::utils::StatusOr;
 using ostp::severcc::server::Request;
+using ostp::severcc::server::Server;
 using ostp::severcc::server::ServerMode;
 
-namespace ostp::severcc::server::tcp {
+namespace ostp::severcc::server {
 /// A generic server to handle multiple protocols.
-class Server {
+class TcpServer : virtual public Server {
    private:
     /// Associates a communication protocol with a processor id that handles it.
     DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
@@ -46,42 +29,31 @@ class Server {
     /// Arguments:
     ///     port: The port the server will listen on.
     ///     mode: The mode the server will run in.
-    Server(int16_t port, ServerMode mode);
+    TcpServer(int16_t port, ServerMode mode);
 
     /// Constructs a server with default mode.
     ///
     /// Arguments:
     ///     port: The port the server will listen on.
-    Server(int16_t port);
+    TcpServer(int16_t port);
 
     /// Constructs a server with default port and mode.
-    Server();
+    TcpServer();
 
     /// Destructor for the server.
-    ~Server();
+    ~TcpServer();
 
-    /// Runs the server.
-    ///
-    /// Returns:
-    ///     A status code indicating the success of the operation and the port the server is
-    ///     listening on.
+    // See server.h for documentation.
     [[noreturn]] void run();
 
-    /// Registers or updates a protocol with a processor.
-    ///
-    /// Arguments:
-    ///     protocol: The protocol to register.
-    ///     processor: The processor to handle the protocol.
+    // See server.h for documentation.
     void register_processor(const std::string protocol,
                             std::function<void(const Request)> processor);
 
-    /// Registers the default processor
-    ///
-    /// Arguments:
-    ///     processor: The default processor to handle unregistered protocols.
+    // See server.h for documentation.
     void register_default_processor(std::function<void(const Request)> processor);
 };
 
-}  // namespace ostp::severcc::server::tcp
+}  // namespace ostp::severcc::server
 
 #endif
