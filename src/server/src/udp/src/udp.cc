@@ -9,9 +9,10 @@
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::severcc::server::ServerMode;
 using ostp::severcc::server::UdpServer;
+using std::string;
 
 // See tcp.h for documentation.
-UdpServer::UdpServer(int16_t port, ServerMode mode, char *group)
+UdpServer::UdpServer(int16_t port, ServerMode mode, const string group)
     : protocol_processors(nullptr), port(port), mode(mode), group(group) {
     // Setup hints for udp with multicast.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
@@ -32,7 +33,7 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, char *group)
 
     // Setup the group address.
     struct ip_mreq mreq;
-    mreq.imr_multiaddr.s_addr = inet_addr(this->group);
+    mreq.imr_multiaddr.s_addr = inet_addr(this->group.c_str());
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
     // Bind to the first address.
@@ -98,7 +99,8 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, char *group)
 }
 
 // See tcp.h for documentation.
-UdpServer::UdpServer(int16_t port, ServerMode mode) : UdpServer(port, mode, "0.0.0.0") {}
+UdpServer::UdpServer(int16_t port, ServerMode mode)
+    : UdpServer(port, mode, SERVERCC_DEFAULT_GROUP_ADDRESS) {}
 
 // See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port) : UdpServer(port, SERVERCC_DEFAULT_MODE) {}

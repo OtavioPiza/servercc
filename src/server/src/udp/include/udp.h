@@ -10,6 +10,7 @@ using ostp::libcc::utils::StatusOr;
 using ostp::severcc::server::Request;
 using ostp::severcc::server::Server;
 using ostp::severcc::server::ServerMode;
+using std::string;
 
 namespace ostp::severcc::server {
 /// A generic server to handle multiple protocols.
@@ -25,7 +26,7 @@ class UdpServer : virtual public Server {
     const ServerMode mode;
 
     /// The group address for the server to listen on for multicast.
-    const char *group;
+    const string group;
 
     /// The address info for the server.
     struct addrinfo *server_addr;
@@ -40,7 +41,7 @@ class UdpServer : virtual public Server {
     ///     port: The port the server will listen on.
     ///     mode: The mode the server will run in.
     ///     group_address: The group address the server will listen on.
-    UdpServer(int16_t port, ServerMode mode, char *group_address);
+    UdpServer(int16_t port, ServerMode mode, const string group);
 
     /// Constructor for the server.
     ///
