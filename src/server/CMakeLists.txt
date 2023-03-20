@@ -1,12 +1,12 @@
-add_library(server SHARED)
+add_library(server INTERFACE)
 
-target_sources(server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/server.cc)
-target_include_directories(
+target_include_directories(server INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(
     server
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    INTERFACE
+        config
+        tcp
 )
 
-target_link_libraries(server PRIVATE libcc)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/config config)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tcp tcp)

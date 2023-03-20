@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-namespace ostp::severcc
+namespace ostp::severcc::server
 {
 
     /// The mode the server will run in.

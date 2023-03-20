@@ -1,4 +1,4 @@
-#include "server.h"
+#include "tcp.h"
 
 #include <cstring>
 #include <vector>
@@ -7,8 +7,8 @@
 #include "defaults.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
-using ostp::severcc::Server;
-using ostp::severcc::ServerMode;
+using ostp::severcc::server::ServerMode;
+using ostp::severcc::server::tcp::Server;
 
 // See server.h for documentation.
 Server::Server(int16_t port, ServerMode mode)

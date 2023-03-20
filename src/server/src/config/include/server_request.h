@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace ostp::severcc
+namespace ostp::severcc::server
 {
     /// A request to the server.
     struct Request
