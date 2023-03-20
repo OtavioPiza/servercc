@@ -87,12 +87,6 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group)
         throw "Error binding to address";
     }
 
-    // Try to listen.
-    if (listen(server_socket_fd, SERVERCC_DEFAULT_BACKLOG) < 0) {
-        perror("listen");
-        throw "Error listening";
-    }
-
     // Save the server address.
     this->server_socket_fd = server_socket_fd;
     this->server_addr = addr;
@@ -113,23 +107,15 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
 
 // See server.h for documentation.
 [[noreturn]] void UdpServer::run() {
-    int client_socket_fd;            // F.D. for the client socket.
-    struct sockaddr_in client_addr;  // Address of the client.
-    socklen_t client_addr_len = sizeof(struct sockaddr_in);
 
     while (true) {
-        // Try to accept a connection.
-        if ((client_socket_fd = accept(this->server_socket_fd, (struct sockaddr *)&client_addr,
-                                       &client_addr_len)) < 0) {
-            perror("accept");
-            continue;
-        }
+        // Read from the socket.
         std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
 
         // Try to read from the client.
-        if ((recv(client_socket_fd, &buffer[0], buffer.size(), 0)) < 0) {
+        if ((read(server_socket_fd, &buffer[0], buffer.size())) < 0) {
             perror("recv");
-            close(client_socket_fd);
+            close(server_socket_fd);
             continue;
         }
 
@@ -141,10 +127,9 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
         // Look for the processor that handles the provided protocol and send the request to it.
         auto processor = this->protocol_processors.get(&buffer[0], i);
         if (processor) {
-            processor(Request{client_socket_fd, std::string(buffer.begin(), buffer.begin() + i),
+            processor(Request{server_socket_fd, std::string(buffer.begin(), buffer.begin() + i),
                               std::string(buffer.begin(), buffer.end())});
         } else {
-            close(client_socket_fd);
         }
     }
 }
