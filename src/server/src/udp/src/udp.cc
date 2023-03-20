@@ -13,11 +13,11 @@ using ostp::severcc::server::UdpServer;
 // See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port, ServerMode mode)
     : protocol_processors(nullptr), port(port), mode(mode) {
-    // Setup hints.
+    // Setup hints for udp with multicast.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
     memset(hints, 0, sizeof(struct addrinfo));
     hints->ai_family = AF_UNSPEC;
-    hints->ai_socktype = SOCK_STREAM;
+    hints->ai_socktype = SOCK_DGRAM;
     hints->ai_flags = AI_PASSIVE;
 
     // Try to get the address info.

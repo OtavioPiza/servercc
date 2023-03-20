@@ -18,10 +18,20 @@ class UdpServer : virtual public Server {
     /// Associates a communication protocol with a processor id that handles it.
     DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
 
+    /// The port the server will listen on.
     const int16_t port;
+
+    /// The mode the server will run in.
     const ServerMode mode;
+
+    /// The address info for the server.
     struct addrinfo *server_addr;
+
+    /// The socket file descriptor for the server.
     int server_socket_fd;
+
+    /// The group address for the server to listen on for multicast.
+    struct sockaddr_in group_addr;
 
    public:
     /// Constructor for the server.
