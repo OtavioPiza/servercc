@@ -74,8 +74,8 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group,
             mreq.imr_interface.s_addr = inet_addr(interface.c_str());
 
             // Try to join the multicast group on that interface.
-            if (setsockopt(server_socket_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
-                           sizeof(mreq)) < 0) {
+            if (setsockopt(server_socket_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) <
+                0) {
                 perror("setsockopt");
                 close(server_socket_fd);
                 addr = addr->ai_next;
