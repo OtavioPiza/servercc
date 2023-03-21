@@ -1,3 +1,0 @@
-[submodule "lib/libcc"]
-	path = lib/libcc
-	url = https://github.com/OtavioPiza/libcc.git
