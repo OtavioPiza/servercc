@@ -34,7 +34,7 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group)
     // Setup the group address.
     struct ip_mreq mreq;
     mreq.imr_multiaddr.s_addr = inet_addr(this->group.c_str());
-    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+    mreq.imr_interface.s_addr = inet_addr("172.24.202.75");
 
     // Bind to the first address.
     struct addrinfo *addr = result;
