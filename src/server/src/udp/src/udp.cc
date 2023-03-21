@@ -1,7 +1,6 @@
 #include "udp.h"
 
 #include <cstring>
-#include <vector>
 
 #include "default_trie.h"
 #include "defaults.h"
@@ -10,9 +9,11 @@ using ostp::libcc::data_structures::DefaultTrie;
 using ostp::severcc::server::ServerMode;
 using ostp::severcc::server::UdpServer;
 using std::string;
+using std::vector;
 
 // See tcp.h for documentation.
-UdpServer::UdpServer(int16_t port, ServerMode mode, const string group)
+UdpServer::UdpServer(int16_t port, ServerMode mode, const string group,
+                     const vector<string> interfaces)
     : protocol_processors(nullptr), port(port), mode(mode), group(group) {
     // Setup hints for udp with multicast.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
@@ -34,7 +35,6 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group)
     // Setup the group address.
     struct ip_mreq mreq;
     mreq.imr_multiaddr.s_addr = inet_addr(this->group.c_str());
-    mreq.imr_interface.s_addr = inet_addr("172.24.202.75");
 
     // Bind to the first address.
     struct addrinfo *addr = result;
@@ -67,11 +67,25 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group)
             continue;
         }
 
-        // Try to join the multicast group.
-        if (setsockopt(server_socket_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
-            perror("setsockopt");
-            close(server_socket_fd);
-            addr = addr->ai_next;
+        // Try to join the multicast group on every interface.
+        bool success = true;
+        for (const string &interface : interfaces) {
+            // Set multicast interface.
+            mreq.imr_interface.s_addr = inet_addr(interface.c_str());
+
+            // Try to join the multicast group on that interface.
+            if (setsockopt(server_socket_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
+                           sizeof(mreq)) < 0) {
+                perror("setsockopt");
+                close(server_socket_fd);
+                addr = addr->ai_next;
+                success = false;
+                break;
+            }
+        }
+
+        // If we failed to join the multicast group on any interface, continue.
+        if (!success) {
             continue;
         }
 
@@ -93,21 +107,18 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group)
 }
 
 // See tcp.h for documentation.
-UdpServer::UdpServer(int16_t port, ServerMode mode)
-    : UdpServer(port, mode, SERVERCC_DEFAULT_GROUP_ADDRESS) {}
+UdpServer::UdpServer(int16_t port, const string group, const vector<string> interfaces)
+    : UdpServer(port, SERVERCC_DEFAULT_MODE, group, interfaces) {}
 
 // See tcp.h for documentation.
-UdpServer::UdpServer(int16_t port) : UdpServer(port, SERVERCC_DEFAULT_MODE) {}
-
-// See tcp.h for documentation.
-UdpServer::UdpServer() : UdpServer(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE) {}
+UdpServer::UdpServer(const string group, const vector<string> interfaces)
+    : UdpServer(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE, group, interfaces) {}
 
 // See tcp.h for documentation.
 UdpServer::~UdpServer() { close(this->server_socket_fd); }
 
 // See server.h for documentation.
 [[noreturn]] void UdpServer::run() {
-
     while (true) {
         // Read from the socket.
         std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
