@@ -7,12 +7,12 @@
 #include "server_defaults.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
+using ostp::severcc::server::Server;
 using ostp::severcc::server::ServerMode;
 using ostp::severcc::server::TcpServer;
 
 // See tcp.h for documentation.
-TcpServer::TcpServer(int16_t port, ServerMode mode)
-    : protocol_processors(nullptr), port(port), mode(mode) {
+TcpServer::TcpServer(int16_t port, ServerMode mode) : Server(port, mode) {
     // Setup hints.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
     memset(hints, 0, sizeof(struct addrinfo));
@@ -21,7 +21,7 @@ TcpServer::TcpServer(int16_t port, ServerMode mode)
     hints->ai_flags = AI_PASSIVE;
 
     // Try to get the address info.
-    if (getaddrinfo(NULL, std::to_string(this->port).c_str(), hints, &result) != 0) {
+    if (getaddrinfo(NULL, std::to_string(port).c_str(), hints, &result) != 0) {
         perror("getaddrinfo");
         throw "Error getting address info";
     }
@@ -101,8 +101,8 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
 
     while (true) {
         // Try to accept a connection.
-        if ((client_socket_fd = accept(this->server_socket_fd, (struct sockaddr *)&client_addr,
-                                       &client_addr_len)) < 0) {
+        if ((client_socket_fd =
+                 accept(server_socket_fd, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
             perror("accept");
             continue;
         }
@@ -123,21 +123,12 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
         // Look for the processor that handles the provided protocol and send the request to it.
         auto processor = this->protocol_processors.get(&buffer[0], i);
         if (processor) {
-            processor(Request{client_socket_fd, std::string(buffer.begin(), buffer.begin() + i),
+            processor(Request{server_socket_fd, client_socket_fd,
+                              std::string(inet_ntoa(client_addr.sin_addr)),
+                              std::string(buffer.begin(), buffer.begin() + i),
                               std::string(buffer.begin(), buffer.end())});
         } else {
             close(client_socket_fd);
         }
     }
-}
-
-// See server.h for documentation.
-void TcpServer::register_processor(std::string protocol,
-                                std::function<void(const Request)> processor) {
-    this->protocol_processors.insert(protocol.c_str(), protocol.length(), processor);
-}
-
-// See server.h for documentation.
-void TcpServer::register_default_processor(std::function<void(const Request)> processor) {
-    this->protocol_processors.update_default_return(processor);
 }

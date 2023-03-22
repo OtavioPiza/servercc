@@ -1,8 +1,8 @@
 #ifndef SERVERCC_SERVER_UDP_H
 #define SERVERCC_SERVER_UDP_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "abstract_server.h"
 #include "default_trie.h"
@@ -20,23 +20,8 @@ namespace ostp::severcc::server {
 /// A generic server to handle multiple protocols.
 class UdpServer : virtual public Server {
    private:
-    /// Associates a communication protocol with a processor id that handles it.
-    DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
-
-    /// The port the server will listen on.
-    const int16_t port;
-
-    /// The mode the server will run in.
-    const ServerMode mode;
-
     /// The group address for the server to listen on for multicast.
     const string group;
-
-    /// The address info for the server.
-    struct addrinfo *server_addr;
-
-    /// The socket file descriptor for the server.
-    int server_socket_fd;
 
    public:
     /// Constructor for the server.
@@ -68,13 +53,6 @@ class UdpServer : virtual public Server {
 
     // See server.h for documentation.
     [[noreturn]] void run();
-
-    // See server.h for documentation.
-    void register_processor(const std::string protocol,
-                            std::function<void(const Request)> processor);
-
-    // See server.h for documentation.
-    void register_default_processor(std::function<void(const Request)> processor);
 };
 
 }  // namespace ostp::severcc::server

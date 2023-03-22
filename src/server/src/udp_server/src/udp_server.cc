@@ -6,6 +6,7 @@
 #include "server_defaults.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
+using ostp::severcc::server::Server;
 using ostp::severcc::server::ServerMode;
 using ostp::severcc::server::UdpServer;
 using std::string;
@@ -14,7 +15,7 @@ using std::vector;
 // See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port, ServerMode mode, const string group,
                      const vector<string> interfaces)
-    : protocol_processors(nullptr), port(port), mode(mode), group(group) {
+    : Server(port, mode), group(group) {
     // Setup hints for udp with multicast.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
     memset(hints, 0, sizeof(struct addrinfo));
@@ -23,7 +24,7 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group,
     hints->ai_flags = AI_PASSIVE;
 
     // Try to get the address info.
-    if (getaddrinfo(NULL, std::to_string(this->port).c_str(), hints, &result) != 0) {
+    if (getaddrinfo(NULL, std::to_string(port).c_str(), hints, &result) != 0) {
         perror("getaddrinfo");
         throw "Error getting address info";
     }
@@ -138,20 +139,12 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
         // Look for the processor that handles the provided protocol and send the request to it.
         auto processor = this->protocol_processors.get(&buffer[0], i);
         if (processor) {
-            processor(Request{server_socket_fd, std::string(buffer.begin(), buffer.begin() + i),
+            processor(Request{server_socket_fd,
+                              {},
+                              {},
+                              std::string(buffer.begin(), buffer.begin() + i),
                               std::string(buffer.begin(), buffer.end())});
         } else {
         }
     }
-}
-
-// See server.h for documentation.
-void UdpServer::register_processor(std::string protocol,
-                                   std::function<void(const Request)> processor) {
-    this->protocol_processors.insert(protocol.c_str(), protocol.length(), processor);
-}
-
-// See server.h for documentation.
-void UdpServer::register_default_processor(std::function<void(const Request)> processor) {
-    this->protocol_processors.update_default_return(processor);
 }

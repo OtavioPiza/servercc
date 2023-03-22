@@ -3,20 +3,24 @@
 
 #include <memory>
 
-namespace ostp::severcc::server
-{
-    /// A request to the server.
-    struct Request
-    {
-        /// The file descriptor for the client socket.
-        const int client_fd;
+namespace ostp::severcc::server {
+/// A request to the server.
+struct Request {
+    /// The file descriptor for the server socket.
+    const int server_fd;
 
-        /// The protocol of the request.
-        const std::string protocol;
+    /// The file descriptor for the client socket.
+    const std::optional<const int> client_fd;
 
-        /// The raw data of the request.
-        const std::string data;
-    };
-}
+    /// The file descriptor for the client socket.
+    const std::optional<const std::string> client_addr;
+
+    /// The protocol of the request.
+    const std::string protocol;
+
+    /// The raw data of the request.
+    const std::string data;
+};
+}  // namespace ostp::severcc::server
 
 #endif
