@@ -1,7 +1,7 @@
-add_library(types INTERFACE)
+add_library(server_types INTERFACE)
 
 target_include_directories(
-    types
+    server_types
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

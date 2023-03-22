@@ -1,8 +1,9 @@
-add_library(tcp SHARED)
 
-target_sources(tcp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/tcp.cc)
+add_library(udp_server SHARED)
+
+target_sources(udp_server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/udp_server.cc)
 target_include_directories(
-    tcp
+    udp_server
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
     PUBLIC
@@ -10,10 +11,9 @@ target_include_directories(
 )
 
 target_link_libraries(
-    tcp
+    udp_server
     PRIVATE 
-        config
         libcc
-        types
+        server_config
+        server_types
 )
-

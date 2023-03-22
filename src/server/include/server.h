@@ -2,7 +2,7 @@
 #define SERVERCC_SERVER_H
 
 #include "server_types.h"
-#include "tcp.h"
-#include "udp.h"
+#include "tcp_server.h"
+#include "udp_server.h"
 
 #endif

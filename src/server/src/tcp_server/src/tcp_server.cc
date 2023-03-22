@@ -1,10 +1,10 @@
-#include "tcp.h"
+#include "tcp_server.h"
 
 #include <cstring>
 #include <vector>
 
 #include "default_trie.h"
-#include "defaults.h"
+#include "server_defaults.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::severcc::server::ServerMode;

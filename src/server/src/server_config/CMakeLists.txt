@@ -1,7 +1,7 @@
-add_library(config INTERFACE)
+add_library(server_config INTERFACE)
 
 target_include_directories(
-    config
+    server_config
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
