@@ -26,6 +26,9 @@ namespace ostp::servercc::client {
 
 class UdpClient : virtual public Client {
    private:
+    /// The client's socket address.
+    struct sockaddr_in client_address;
+
     /// The interface to use.
     const std::string interface;
 

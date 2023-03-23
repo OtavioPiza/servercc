@@ -72,25 +72,14 @@ StatusOr<bool> UdpClient::open_socket() {
     }
 
     // Set the socket address.
-    struct sockaddr_in socket_address;
-    memset(&socket_address, 0, sizeof(socket_address));
-    socket_address.sin_family = AF_INET;
-    socket_address.sin_addr.s_addr = inet_addr(get_address().c_str());
-    socket_address.sin_port = htons(get_port());
+    memset(&client_address, 0, sizeof(client_address));
+    client_address.sin_family = AF_INET;
+    client_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    client_address.sin_port = htons(get_port());
 
     // Set the socket file and return.
     client_fd = socket_fd;
     is_socket_open = true;
-
-    // Broadcast a message to the server.
-    std::string message = "Hello, server!";
-    if (sendto(client_fd, message.c_str(), message.size(), 0, (struct sockaddr *)&socket_address,
-               sizeof(socket_address)) < 0) {
-        perror("sendto");
-        close(client_fd);
-        return StatusOr<bool>(Status::ERROR, "Failed to send message to server.", 0);
-    }
-
     return StatusOr<bool>(Status::SUCCESS, "Socket opened successfully.", true);
 }
 
