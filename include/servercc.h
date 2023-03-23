@@ -3,5 +3,6 @@
 
 #include "client.h"
 #include "server.h"
+#include "connector.h"
 
 #endif
