@@ -77,6 +77,23 @@ class Client {
     /// Returns:
     ///     A status indicating whether the socket was closed successfully.
     virtual StatusOr<bool> close_socket() = 0;
+
+    /// Sends a message to the server.
+    ///
+    /// Arguments:
+    ///     message: The message to send.
+    ///
+    /// Returns:
+    ///     A status indicating whether the message was sent successfully and the
+    ///     number of bytes sent.
+    virtual StatusOr<int> send(const std::string message) = 0;
+
+    /// Blocks until a message is received from the server.
+    ///
+    /// Returns:
+    ///     A status indicating whether a message was received successfully and
+    ///     the message received.
+    virtual StatusOr<std::string> receive() = 0;
 };
 
 }  // namespace ostp::servercc::client

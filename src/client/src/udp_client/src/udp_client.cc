@@ -19,6 +19,7 @@ UdpClient::UdpClient(const std::string interface, const std::string server_addre
       ttl(ttl),
       multicast_group(multicast_group){};
 
+/// See udp_client.h for documentation.
 StatusOr<bool> UdpClient::open_socket() {
     // If the socket is already open, return.
     if (is_socket_open) {
@@ -84,4 +85,62 @@ StatusOr<bool> UdpClient::open_socket() {
 }
 
 /// See udp_client.h for documentation.
-StatusOr<bool> UdpClient::close_socket() {};
+StatusOr<bool> UdpClient::close_socket() {
+    // If the socket is already closed, return.
+    if (!is_socket_open) {
+        return StatusOr<bool>(Status::SUCCESS, "Socket is already closed.", true);
+    }
+
+    // Close the socket.
+    if (close(client_fd) < 0) {
+        perror("close");
+        return StatusOr<bool>(Status::ERROR, "Failed to close socket.", 0);
+    }
+
+    // Set the socket file and return.
+    client_fd = -1;
+    is_socket_open = false;
+    client_address = {};
+
+    // Return.
+    return StatusOr<bool>(Status::SUCCESS, "Socket closed successfully.", true);
+};
+
+/// See udp_client.h for documentation.
+StatusOr<int> UdpClient::send(const std::string message) {
+    // If the socket is not open, return.
+    if (!is_socket_open) {
+        return StatusOr<int>(Status::ERROR, "Socket is not open.", 0);
+    }
+
+    // Send the message.
+    int bytes_sent = sendto(client_fd, message.c_str(), message.size(), 0,
+                            (struct sockaddr *)&client_address, sizeof(client_address));
+    if (bytes_sent < 0) {
+        perror("sendto");
+        return StatusOr<int>(Status::ERROR, "Failed to send message.", 0);
+    }
+
+    // Return.
+    return StatusOr<int>(Status::SUCCESS, "Message sent successfully.", bytes_sent);
+}
+
+/// See udp_client.h for documentation.
+StatusOr<std::string> UdpClient::receive() {
+    // If the socket is not open, return.
+    if (!is_socket_open) {
+        return StatusOr<std::string>(Status::ERROR, "Socket is not open.", "");
+    }
+
+    // Receive the message.
+    char buffer[1024];
+    int bytes_received = recvfrom(client_fd, buffer, 1024, 0, NULL, NULL);
+    if (bytes_received < 0) {
+        perror("recvfrom");
+        return StatusOr<std::string>(Status::ERROR, "Failed to receive message.", "");
+    }
+
+    // Return.
+    return StatusOr<std::string>(Status::SUCCESS, "Message received successfully.",
+                                 std::string(buffer, bytes_received));
+}
