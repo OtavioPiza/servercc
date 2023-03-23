@@ -73,10 +73,10 @@ class UdpClient : virtual public Client {
     StatusOr<bool> close_socket() override;
 
     /// See abstract_client.h
-    StatusOr<int> send(const std::string message) override;
+    StatusOr<int> send_message(const std::string message) override;
 
     /// See abstract_client.h
-    StatusOr<std::string> receive() override;
+    StatusOr<std::string> receive_message() override;
 };
 
 }  // namespace ostp::servercc::client

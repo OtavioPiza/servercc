@@ -35,7 +35,7 @@ class Client {
     ///     server_address: The server's address.
     ///     port: The server's port.
     Client(const std::string server_address, const uint16_t port)
-        : server_address(server_address), port(port), is_socket_open(false) {}
+        : server_address(server_address), port(port), is_socket_open(false), client_fd(-1) {}
 
    public:
     // Getters
@@ -86,14 +86,14 @@ class Client {
     /// Returns:
     ///     A status indicating whether the message was sent successfully and the
     ///     number of bytes sent.
-    virtual StatusOr<int> send(const std::string message) = 0;
+    virtual StatusOr<int> send_message(const std::string message) = 0;
 
     /// Blocks until a message is received from the server.
     ///
     /// Returns:
     ///     A status indicating whether a message was received successfully and
     ///     the message received.
-    virtual StatusOr<std::string> receive() = 0;
+    virtual StatusOr<std::string> receive_message() = 0;
 };
 
 }  // namespace ostp::servercc::client

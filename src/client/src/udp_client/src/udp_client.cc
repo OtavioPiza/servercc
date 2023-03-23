@@ -107,7 +107,7 @@ StatusOr<bool> UdpClient::close_socket() {
 };
 
 /// See udp_client.h for documentation.
-StatusOr<int> UdpClient::send(const std::string message) {
+StatusOr<int> UdpClient::send_message(const std::string message) {
     // If the socket is not open, return.
     if (!is_socket_open) {
         return StatusOr<int>(Status::ERROR, "Socket is not open.", 0);
@@ -126,7 +126,7 @@ StatusOr<int> UdpClient::send(const std::string message) {
 }
 
 /// See udp_client.h for documentation.
-StatusOr<std::string> UdpClient::receive() {
+StatusOr<std::string> UdpClient::receive_message() {
     // If the socket is not open, return.
     if (!is_socket_open) {
         return StatusOr<std::string>(Status::ERROR, "Socket is not open.", "");
