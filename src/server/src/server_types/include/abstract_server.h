@@ -27,6 +27,7 @@ using ostp::servercc::server::Request;
 using ostp::servercc::server::ServerMode;
 
 namespace ostp::servercc::server {
+
 /// A generic server to handle multiple protocols.
 class Server {
    private:
@@ -106,6 +107,6 @@ class Server {
     [[noreturn]] virtual void run() = 0;
 };
 
-}  // namespace ostp::severcc::server
+}  // namespace ostp::servercc::server
 
 #endif
