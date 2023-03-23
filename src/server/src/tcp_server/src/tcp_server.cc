@@ -7,9 +7,9 @@
 #include "server_defaults.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
-using ostp::severcc::server::Server;
-using ostp::severcc::server::ServerMode;
-using ostp::severcc::server::TcpServer;
+using ostp::servercc::server::Server;
+using ostp::servercc::server::ServerMode;
+using ostp::servercc::server::TcpServer;
 
 // See tcp.h for documentation.
 TcpServer::TcpServer(int16_t port, ServerMode mode) : Server(port, mode) {

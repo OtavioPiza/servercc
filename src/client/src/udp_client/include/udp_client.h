@@ -14,6 +14,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <optional>
+
 #include "abstract_client.h"
 #include "status_or.h"
 
@@ -27,31 +29,45 @@ class UdpClient : virtual public Client {
     /// The interface to use.
     const std::string interface;
 
+    /// The multicast group to join if any.
+    const std::optional<std::string> multicast_group;
+
+    /// The time-to-live for multicast packets.
+    const uint8_t ttl;
+
    public:
     // Constructors
 
-    /// Constructs a UDP client with the specified address, port, and interface
+    /// Constructs a UDP client over the specified interface with the specified
+    /// address, port, ttl.
     ///
     /// Arguments:
-    ///     address: The server's address.
+    ///     interface: The interface to use.
+    ///     server_address: The server's address.
     ///     port: The server's port.
-    ///     interface: The interface to use.
-    UdpClient(const std::string address, const uint16_t port, const std::string interface);
+    ///     ttl: The time-to-live for multicast packets.
+    UdpClient(const std::string interface, const std::string server_address, const uint16_t port,
+              const uint8_t ttl);
 
-    // Methods
-
-    /// Multicasts a request to the specified multicast group over the specified interface.
+    /// Constructs a UDP client over the specified interface with the specified
+    /// address, port, ttl and multicast group.
     ///
     /// Arguments:
-    ///     request: The request to send.
     ///     interface: The interface to use.
-    ///     multicast_group: The multicast group to use.
-    ///
-    /// Returns:
-    ///     A StatusOr<int> indicating whether the request was sent successfully and the number of
-    ///     bytes sent.
-    StatusOr<int> multicast_request(const std::string request, const std::string interface,
-                                    const std::string multicast_group);
+    ///     server_address: The server's address.
+    ///     port: The server's port.
+    ///     ttl: The time-to-live for multicast packets.
+    ///     multicast_group: The multicast group to join.
+    UdpClient(const std::string interface, const std::string server_address, const uint16_t port,
+              const uint8_t ttl, const std::string multicast_group);
+
+    // Client methods.
+
+    /// See abstract_client.h
+    StatusOr<bool> open_socket() override;
+
+    /// See abstract_client.h
+    StatusOr<bool> close_socket() override;
 };
 
 }  // namespace ostp::servercc::client

@@ -18,7 +18,15 @@ class Client {
     /// The server's port.
     const uint16_t port;
 
-   public:
+   protected:
+    // Instance variables
+
+    /// The client's socket file descriptor.
+    int client_fd;
+
+    /// Whether the socket is open.
+    bool is_socket_open;
+
     // Constructors
 
     /// Constructs a client with the specified address and port.
@@ -27,8 +35,9 @@ class Client {
     ///     server_address: The server's address.
     ///     port: The server's port.
     Client(const std::string server_address, const uint16_t port)
-        : server_address(server_address), port(port) {}
+        : server_address(server_address), port(port), is_socket_open(false) {}
 
+   public:
     // Getters
 
     /// Gets the server's address.
@@ -43,23 +52,31 @@ class Client {
     ///     The server's port.
     virtual uint16_t get_port() { return port; }
 
+    /// Gets the client's socket file descriptor.
+    ///
+    /// Returns:
+    ///     The client's socket file descriptor.
+    virtual int get_fd() { return client_fd; }
+
+    /// Checks whether the socket is open.
+    ///
+    /// Returns:
+    ///     Whether the socket is open.
+    virtual bool is_open() { return is_socket_open; }
+
     // Virtual Methods
 
-    /// Sends a request to the server.
-    ///
-    /// Arguments:
-    ///     request: The request to send.
+    /// Opens the client's socket.
     ///
     /// Returns:
-    ///     A StatusOr<void> indicating whether the request was sent successfully and the number of
-    ///     bytes sent.
-    virtual StatusOr<int> send_request(const std::string request) = 0;
+    ///     A status indicating whether the socket was opened successfully.
+    virtual StatusOr<bool> open_socket() = 0;
 
-    /// Receives a response from the server.
+    /// Closes the client's socket.
     ///
     /// Returns:
-    ///     The response from the server.
-    virtual std::string receive_response() = 0;
+    ///     A status indicating whether the socket was closed successfully.
+    virtual StatusOr<bool> close_socket() = 0;
 };
 
 }  // namespace ostp::servercc::client

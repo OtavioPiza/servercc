@@ -7,11 +7,11 @@
 
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::libcc::utils::StatusOr;
-using ostp::severcc::server::Request;
-using ostp::severcc::server::Server;
-using ostp::severcc::server::ServerMode;
+using ostp::servercc::server::Request;
+using ostp::servercc::server::Server;
+using ostp::servercc::server::ServerMode;
 
-namespace ostp::severcc::server {
+namespace ostp::servercc::server {
 /// A generic server to handle multiple protocols.
 class TcpServer : virtual public Server {
    public:

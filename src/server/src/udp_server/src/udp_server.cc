@@ -6,9 +6,9 @@
 #include "server_defaults.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
-using ostp::severcc::server::Server;
-using ostp::severcc::server::ServerMode;
-using ostp::severcc::server::UdpServer;
+using ostp::servercc::server::Server;
+using ostp::servercc::server::ServerMode;
+using ostp::servercc::server::UdpServer;
 using std::string;
 using std::vector;
 

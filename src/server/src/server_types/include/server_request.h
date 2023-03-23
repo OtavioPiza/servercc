@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace ostp::severcc::server {
+namespace ostp::servercc::server {
 /// A request to the server.
 struct Request {
     /// The file descriptor for the server socket.
