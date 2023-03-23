@@ -3,6 +3,10 @@
 
 #include <string>
 
+#include "status_or.h"
+
+using ostp::libcc::utils::StatusOr;
+
 namespace ostp::servercc::client {
 
 /// A generic client to handle multiple transports layer protocols.
@@ -39,13 +43,17 @@ class Client {
     ///     The server's port.
     virtual uint16_t get_port() { return port; }
 
-    // Methods
+    // Virtual Methods
 
     /// Sends a request to the server.
     ///
     /// Arguments:
     ///     request: The request to send.
-    virtual void send_request(const std::string request) = 0;
+    ///
+    /// Returns:
+    ///     A StatusOr<void> indicating whether the request was sent successfully and the number of
+    ///     bytes sent.
+    virtual StatusOr<int> send_request(const std::string request) = 0;
 
     /// Receives a response from the server.
     ///

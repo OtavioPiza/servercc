@@ -13,5 +13,5 @@ target_link_libraries(
     udp_client
     PRIVATE 
         client_types
-        libcc
+        utils
 )
