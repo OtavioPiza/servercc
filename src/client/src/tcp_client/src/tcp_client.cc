@@ -6,7 +6,10 @@ using ostp::servercc::client::TcpClient;
 
 /// See tcp_client.h for documentation.
 TcpClient::TcpClient(const std::string server_address, const uint16_t port)
-    : Client(server_address, port) {};
+    : Client(server_address, port){};
+
+/// See tcp_client.h for documentation.
+TcpClient::TcpClient(const int socket) : Client("", 0) { client_fd = socket; }
 
 /// See tcp_client.h for documentation.
 StatusOr<bool> TcpClient::open_socket() {

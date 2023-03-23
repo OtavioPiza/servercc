@@ -28,13 +28,18 @@ class TcpClient : virtual public Client {
    public:
     // Constructors
 
-    /// Constructs a UDP client over the specified interface with the specified
-    /// address, port, ttl.
+    /// Constructs a TPC client from the specified server address and port.
     ///
     /// Arguments:
     ///     server_address: The server's address.
     ///     port: The server's port.
     TcpClient(const std::string server_address, const uint16_t port);
+
+    /// Constructs a TCP client from the specified socket.
+    ///
+    /// Arguments:
+    ///     socket: The socket.
+    TcpClient(const int socket);
 
     // Client methods.
 
