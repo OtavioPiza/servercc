@@ -1,8 +1,8 @@
-add_library(udp_client SHARED)
+add_library(multicast_client SHARED)
 
-target_sources(udp_client PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/udp_client.cc)
+target_sources(multicast_client PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/multicast_client.cc)
 target_include_directories(
-    udp_client
+    multicast_client
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
     PUBLIC
@@ -10,7 +10,7 @@ target_include_directories(
 )
 
 target_link_libraries(
-    udp_client
+    multicast_client
     PRIVATE 
         client_types
         libcc

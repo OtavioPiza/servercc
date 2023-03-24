@@ -3,6 +3,6 @@
 
 #include "client_types.h"
 #include "tcp_client.h"
-#include "udp_client.h"
+#include "multicast_client.h"
 
 #endif

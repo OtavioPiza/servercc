@@ -2,6 +2,7 @@
 #define SERVERCC_CONNECTOR_H
 
 #include <functional>
+#include <thread>
 #include <unordered_map>
 
 #include "connector_request.h"
@@ -20,18 +21,33 @@ class Connector {
     /// Default trie for processing requests.
     DefaultTrie<char, std::function<void(const ConnectorRequest)>> processors;
 
+    /// Handler for when a client disconnects.
+    const std::function<void(int)> disconnect_handler;
+
     /// A map of the current TCP clients identified by their socket file
     /// descriptor.
     unordered_map<int, TcpClient> clients;
 
+    /// A map of the current running client threads identified by their socket
+    /// file descriptor.
+    unordered_map<int, std::thread> client_threads;
+
+    /// Runs the specified client in a thread.
+    ///
+    /// Arguments:
+    ///     fd: The file descriptor of the client.
+    void run_client(int fd);
+
    public:
     // Constructors
 
-    /// Constructs a new connector with the specified default processor.
-    /// 
+    /// Constructs a new connector with the specified default processor and disconnect handler.
+    ///
     /// Arguments:
     ///     default_processor: The default processor to use.
-    Connector(std::function<void(const ConnectorRequest)> default_processor);
+    ///     disconnect_handler: The handler to use when a client disconnects.
+    Connector(const std::function<void(const ConnectorRequest)> default_processor,
+              const std::function<void(int)> disconnect_handler);
 
     // Destructor
     ~Connector();
