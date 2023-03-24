@@ -4,6 +4,7 @@
 #include <memory>
 
 namespace ostp::servercc::server {
+
 /// A request to the server.
 struct Request {
     /// The file descriptor for the server socket.
@@ -16,11 +17,12 @@ struct Request {
     const std::optional<const std::string> client_addr;
 
     /// The protocol of the request.
-    const std::string protocol;
+    const std::string type;
 
     /// The raw data of the request.
     const std::string data;
 };
-}  // namespace ostp::severcc::server
+
+}  // namespace ostp::servercc::server
 
 #endif
