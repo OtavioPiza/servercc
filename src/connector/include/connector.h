@@ -5,13 +5,13 @@
 #include <thread>
 #include <unordered_map>
 
-#include "request.h"
 #include "default_trie.h"
+#include "request.h"
 #include "tcp_client.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
-using ostp::servercc::client::TcpClient;
 using ostp::servercc::Request;
+using ostp::servercc::client::TcpClient;
 using std::unordered_map;
 
 namespace ostp::servercc::connector {
@@ -60,14 +60,22 @@ class Connector {
     /// Arguments:
     ///     path: The path to add the processor for.
     ///     processor: The processor to add.
-    void add_processor(const std::string& path,
-                       std::function<void(const Request)> processor);
+    void add_processor(const std::string& path, std::function<void(const Request)> processor);
 
     /// Adds a TCP client to the connector.
     ///
     /// Arguments:
     ///     client: The client to add.
-    void add_client(TcpClient client);
+    /// Returns:
+    ///     The file descriptor of the client.
+    int add_client(TcpClient client);
+
+    /// Send a message through the specified client.
+    ///
+    /// Arguments:
+    ///     fd: The file descriptor of the client.
+    ///     message: The message to send.
+    void send_message(int fd, const std::string& message);
 };
 
 }  // namespace ostp::servercc::connector

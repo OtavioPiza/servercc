@@ -9,7 +9,11 @@ TcpClient::TcpClient(const std::string server_address, const uint16_t port)
     : Client(server_address, port){};
 
 /// See tcp_client.h for documentation.
-TcpClient::TcpClient(const int socket) : Client("", 0) { client_fd = socket; }
+TcpClient::TcpClient(const int socket, const std::string server_address, const uint16_t port)
+    : Client(server_address, port) {
+    client_fd = socket;
+    is_socket_open = true;
+}
 
 /// See tcp_client.h for documentation.
 StatusOr<bool> TcpClient::open_socket() {
@@ -81,7 +85,7 @@ StatusOr<bool> TcpClient::close_socket() {
 }
 
 /// See tcp_client.h for documentation.
-StatusOr<int> TcpClient::send_message(const std::string message) {
+StatusOr<int> TcpClient::send_message(const std::string &message) {
     // If the socket is not open, throw an exception.
     if (client_fd == -1) {
         return StatusOr<int>(Status::ERROR, "Socket is not open.", -1);

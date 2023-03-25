@@ -39,7 +39,9 @@ class TcpClient : virtual public Client {
     ///
     /// Arguments:
     ///     socket: The socket.
-    TcpClient(const int socket);
+    ///     server_address: The server's address.
+    ///     port: The server's port.
+    TcpClient(const int socket, const std::string server_address, const uint16_t port);
 
     // Client methods.
 
@@ -50,7 +52,7 @@ class TcpClient : virtual public Client {
     StatusOr<bool> close_socket() override;
 
     /// See abstract_client.h
-    StatusOr<int> send_message(const std::string message) override;
+    StatusOr<int> send_message(const std::string &message) override;
 
     /// See abstract_client.h
     StatusOr<std::string> receive_message() override;

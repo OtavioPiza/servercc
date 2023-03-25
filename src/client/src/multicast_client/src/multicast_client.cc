@@ -79,7 +79,7 @@ StatusOr<bool> MulticastClient::close_socket() {
 };
 
 /// See udp_client.h for documentation.
-StatusOr<int> MulticastClient::send_message(const std::string message) {
+StatusOr<int> MulticastClient::send_message(const std::string &message) {
     // If the socket is not open, return.
     if (!is_socket_open) {
         return StatusOr<int>(Status::ERROR, "Socket is not open.", 0);

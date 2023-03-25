@@ -1,9 +1,10 @@
 #include "connector.h"
 
+#include <iostream>
 #include <thread>
 
-using ostp::servercc::connector::Connector;
 using ostp::servercc::Request;
+using ostp::servercc::connector::Connector;
 
 /// See connector.h for documentation.
 Connector::Connector(const std::function<void(const Request)> default_processor,
@@ -20,9 +21,11 @@ void Connector::add_processor(const std::string& path,
 }
 
 /// See connector.h for documentation.
-void Connector::add_client(TcpClient client) {
-    // Add the client to the map.
+int Connector::add_client(TcpClient client) {
+    client.open_socket();
     clients.insert({client.get_fd(), std::move(client)});
+    run_client(client.get_fd());
+    return client.get_fd();
 }
 
 /// See connector.h for documentation.
@@ -53,15 +56,23 @@ void Connector::run_client(int fd) {
             int space_index = request.result.find(' ');
             std::string type = request.result.substr(0, space_index);
 
+            // Echo the request.
+            std::cout << "Request in " << client.get_fd() << ": " << request.result << std::endl;
+
             // Create the connector request.
-
-            // Request connector_request(client.get_fd(), type, request.result);
-
             // Process the request.
-            // processors.get(type.c_str(), type.size())(std::move(connector_request));
         }
     });
 
     // Add the client thread to the map.
     client_threads.insert({fd, std::move(client_thread)});
+}
+
+/// See connector.h for documentation.
+void Connector::send_message(int fd, const std::string& message) {
+    // Get the client from the map.
+    TcpClient& client = clients.at(fd);
+
+    // Send the message.
+    client.send_message(message);
 }

@@ -86,7 +86,7 @@ class Client {
     /// Returns:
     ///     A status indicating whether the message was sent successfully and the
     ///     number of bytes sent.
-    virtual StatusOr<int> send_message(const std::string message) = 0;
+    virtual StatusOr<int> send_message(const std::string &message) = 0;
 
     /// Blocks until a message is received from the server.
     ///
