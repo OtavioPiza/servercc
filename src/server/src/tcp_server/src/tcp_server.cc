@@ -1,12 +1,16 @@
 #include "tcp_server.h"
 
+#include <netinet/in.h>
+
 #include <cstring>
 #include <vector>
 
 #include "default_trie.h"
+#include "request.h"
 #include "server_defaults.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
+using ostp::servercc::Request;
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
 using ostp::servercc::server::TcpServer;
@@ -108,9 +112,16 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
         }
         std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
 
-        // Try to read from the client.
-        if ((recv(client_socket_fd, &buffer[0], buffer.size(), 0)) < 0) {
-            perror("recv");
+        // Try to read from the client and records its address.
+        Request request;
+        request.fd = client_socket_fd;
+        int addr_len = sizeof(struct sockaddr);
+        int bytes_read = recvfrom(client_socket_fd, &buffer[0], buffer.size(), 0, request.addr.get(),
+                                  (socklen_t *)&addr_len);
+
+        // Check for errors.
+        if (bytes_read < 0) {
+            perror("recvfrom");
             close(client_socket_fd);
             continue;
         }
@@ -120,15 +131,11 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
         for (i = 0; i < buffer.size() && !isspace(buffer[i]); i++)
             ;
 
+        // Move data to the request.
+        request.protocol = std::string(&buffer[0], i);
+        request.data = std::string(&buffer[i + 1], bytes_read - i - 1);
+
         // Look for the processor that handles the provided protocol and send the request to it.
-        auto processor = this->protocol_processors.get(&buffer[0], i);
-        if (processor) {
-            processor(Request{server_socket_fd, client_socket_fd,
-                              std::string(inet_ntoa(client_addr.sin_addr)),
-                              std::string(buffer.begin(), buffer.begin() + i),
-                              std::string(buffer.begin(), buffer.end())});
-        } else {
-            close(client_socket_fd);
-        }
+        protocol_processors.get(&buffer[0], i)(std::move(request));
     }
 }

@@ -3,9 +3,10 @@
 #include <thread>
 
 using ostp::servercc::connector::Connector;
+using ostp::servercc::Request;
 
 /// See connector.h for documentation.
-Connector::Connector(const std::function<void(const ConnectorRequest)> default_processor,
+Connector::Connector(const std::function<void(const Request)> default_processor,
                      const std::function<void(int)> disconnect_handler)
     : processors(default_processor), disconnect_handler(disconnect_handler) {}
 
@@ -14,7 +15,7 @@ Connector::~Connector() {}
 
 /// See connector.h for documentation.
 void Connector::add_processor(const std::string& path,
-                              std::function<void(const ConnectorRequest)> processor) {
+                              std::function<void(const Request)> processor) {
     processors.insert(path.c_str(), path.size(), processor);
 }
 
@@ -53,10 +54,11 @@ void Connector::run_client(int fd) {
             std::string type = request.result.substr(0, space_index);
 
             // Create the connector request.
-            ConnectorRequest connector_request(client.get_fd(), type, request.result);
+
+            // Request connector_request(client.get_fd(), type, request.result);
 
             // Process the request.
-            processors.get(type.c_str(), type.size())(std::move(connector_request));
+            // processors.get(type.c_str(), type.size())(std::move(connector_request));
         }
     });
 

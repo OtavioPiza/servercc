@@ -3,9 +3,11 @@
 #include <cstring>
 
 #include "default_trie.h"
+#include "request.h"
 #include "server_defaults.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
+using ostp::servercc::Request;
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
 using ostp::servercc::server::UdpServer;
@@ -124,27 +126,23 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
         // Read from the socket.
         std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
 
-        // Try to read from the client.
-        if ((read(server_socket_fd, &buffer[0], buffer.size())) < 0) {
-            perror("recv");
-            close(server_socket_fd);
-            continue;
-        }
+        // Try to read from the client and store the
+        Request request;
+        int addr_len = sizeof(struct sockaddr);
+        int bytes_read = recvfrom(this->server_socket_fd, &buffer[0], buffer.size(), 0,
+                                  request.addr.get(), (socklen_t *)&addr_len);
 
         // Find the first whitespace character.
         int i;
         for (i = 0; i < buffer.size() && !isspace(buffer[i]); i++)
             ;
 
+        // Move data into the request.
+        request.fd = -1;
+        request.protocol = std::string(buffer.begin(), buffer.begin() + i);
+        request.data = std::string(buffer.begin(), buffer.end());
+
         // Look for the processor that handles the provided protocol and send the request to it.
-        auto processor = this->protocol_processors.get(&buffer[0], i);
-        if (processor) {
-            processor(Request{server_socket_fd,
-                              {},
-                              {},
-                              std::string(buffer.begin(), buffer.begin() + i),
-                              std::string(buffer.begin(), buffer.end())});
-        } else {
-        }
+        protocol_processors.get(&buffer[0], i)(std::move(request));
     }
 }

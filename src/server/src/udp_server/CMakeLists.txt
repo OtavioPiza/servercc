@@ -16,4 +16,5 @@ target_link_libraries(
         libcc
         server_config
         server_types
+        types
 )

@@ -14,4 +14,5 @@ target_link_libraries(
     PRIVATE 
         libcc
         client
+        types
 )

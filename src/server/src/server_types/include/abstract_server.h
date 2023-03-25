@@ -19,11 +19,11 @@
 #include <optional>
 
 #include "default_trie.h"
+#include "request.h"
 #include "server_mode.h"
-#include "server_request.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
-using ostp::servercc::server::Request;
+using ostp::servercc::Request;
 using ostp::servercc::server::ServerMode;
 
 namespace ostp::servercc::server {

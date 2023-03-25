@@ -7,7 +7,6 @@
 
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::libcc::utils::StatusOr;
-using ostp::servercc::server::Request;
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
 
@@ -38,6 +37,6 @@ class TcpServer : virtual public Server {
     [[noreturn]] void run();
 };
 
-}  // namespace ostp::severcc::server
+}  // namespace ostp::servercc::server
 
 #endif

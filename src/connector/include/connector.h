@@ -5,12 +5,13 @@
 #include <thread>
 #include <unordered_map>
 
-#include "connector_request.h"
+#include "request.h"
 #include "default_trie.h"
 #include "tcp_client.h"
 
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::servercc::client::TcpClient;
+using ostp::servercc::Request;
 using std::unordered_map;
 
 namespace ostp::servercc::connector {
@@ -19,7 +20,7 @@ namespace ostp::servercc::connector {
 class Connector {
    private:
     /// Default trie for processing requests.
-    DefaultTrie<char, std::function<void(const ConnectorRequest)>> processors;
+    DefaultTrie<char, std::function<void(const Request)>> processors;
 
     /// Handler for when a client disconnects.
     const std::function<void(int)> disconnect_handler;
@@ -46,7 +47,7 @@ class Connector {
     /// Arguments:
     ///     default_processor: The default processor to use.
     ///     disconnect_handler: The handler to use when a client disconnects.
-    Connector(const std::function<void(const ConnectorRequest)> default_processor,
+    Connector(const std::function<void(const Request)> default_processor,
               const std::function<void(int)> disconnect_handler);
 
     // Destructor
@@ -60,7 +61,7 @@ class Connector {
     ///     path: The path to add the processor for.
     ///     processor: The processor to add.
     void add_processor(const std::string& path,
-                       std::function<void(const ConnectorRequest)> processor);
+                       std::function<void(const Request)> processor);
 
     /// Adds a TCP client to the connector.
     ///
