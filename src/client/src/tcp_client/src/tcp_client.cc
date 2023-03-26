@@ -1,5 +1,9 @@
 #include "tcp_client.h"
 
+#include <netdb.h>
+
+#include <cstring>
+
 using ostp::libcc::utils::Status;
 using ostp::libcc::utils::StatusOr;
 using ostp::servercc::client::TcpClient;

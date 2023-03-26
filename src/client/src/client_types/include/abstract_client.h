@@ -1,7 +1,7 @@
 #ifndef SERVERCC_ABSTRACT_CLIENT_H
 #define SERVERCC_ABSTRACT_CLIENT_H
 
-#include <sys/socket.h>
+#include <netdb.h>
 
 #include <memory>
 #include <string>

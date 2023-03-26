@@ -1,6 +1,5 @@
 #include "connector.h"
 
-#include <iostream>
 #include <thread>
 
 using ostp::servercc::Request;

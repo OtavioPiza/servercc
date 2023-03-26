@@ -1,6 +1,7 @@
 #include "multicast_client.h"
 
-#include <net/if.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 using ostp::libcc::utils::Status;
 using ostp::libcc::utils::StatusOr;
@@ -87,8 +88,8 @@ StatusOr<int> MulticastClient::send_message(const std::string &message) {
     }
 
     // Send the message.
-    int bytes_sent = sendto(client_fd, message.c_str(), message.size(), 0,
-                            client_addr.get(), sizeof(client_addr));
+    int bytes_sent = sendto(client_fd, message.c_str(), message.size(), 0, client_addr.get(),
+                            sizeof(client_addr));
     if (bytes_sent < 0) {
         perror("sendto");
         return StatusOr<int>(Status::ERROR, "Failed to send message.", 0);

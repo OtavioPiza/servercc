@@ -12,7 +12,7 @@ target_include_directories(
 target_link_libraries(
     connector
     PRIVATE 
-        libcc
         client
+        libcc
         types
 )
