@@ -1,21 +1,17 @@
 #include "tcp_server.h"
 
-#include <netinet/in.h>
-
 #include <cstring>
 #include <vector>
 
-#include "default_trie.h"
 #include "request.h"
 #include "server_defaults.h"
 
-using ostp::libcc::data_structures::DefaultTrie;
 using ostp::servercc::Request;
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
 using ostp::servercc::server::TcpServer;
 
-// See tcp.h for documentation.
+/// See tcp.h for documentation.
 TcpServer::TcpServer(int16_t port, ServerMode mode) : Server(port, mode) {
     // Setup hints.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
@@ -88,16 +84,16 @@ TcpServer::TcpServer(int16_t port, ServerMode mode) : Server(port, mode) {
     this->server_addr = addr;
 }
 
-// See tcp.h for documentation.
+/// See tcp.h for documentation.
 TcpServer::TcpServer(int16_t port) : TcpServer(port, SERVERCC_DEFAULT_MODE) {}
 
-// See tcp.h for documentation.
+/// See tcp.h for documentation.
 TcpServer::TcpServer() : TcpServer(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE) {}
 
-// See tcp.h for documentation.
+/// See tcp.h for documentation.
 TcpServer::~TcpServer() { close(this->server_socket_fd); }
 
-// See server.h for documentation.
+/// See server.h for documentation.
 [[noreturn]] void TcpServer::run() {
     int client_socket_fd;            // F.D. for the client socket.
     struct sockaddr_in client_addr;  // Address of the client.
@@ -115,8 +111,8 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
         // Try to read from the client and records its address.
         Request request(client_socket_fd, std::make_shared<struct sockaddr>());
         int addr_len = sizeof(struct sockaddr);
-        int bytes_read = recvfrom(client_socket_fd, &buffer[0], buffer.size(), 0, request.addr.get(),
-                                  (socklen_t *)&addr_len);
+        int bytes_read = recvfrom(client_socket_fd, &buffer[0], buffer.size(), 0,
+                                  request.addr.get(), (socklen_t *)&addr_len);
 
         // Check for errors.
         if (bytes_read < 0) {

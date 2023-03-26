@@ -2,11 +2,7 @@
 #define SERVERCC_SERVER_TCP_H
 
 #include "abstract_server.h"
-#include "default_trie.h"
-#include "status_or.h"
 
-using ostp::libcc::data_structures::DefaultTrie;
-using ostp::libcc::utils::StatusOr;
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
 
@@ -33,7 +29,7 @@ class TcpServer : virtual public Server {
     /// Destructor for the server.
     ~TcpServer();
 
-    // See server.h for documentation.
+    /// See server.h for documentation.
     [[noreturn]] void run();
 };
 

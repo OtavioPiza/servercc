@@ -1,12 +1,13 @@
 #include "udp_server.h"
 
+#include <arpa/inet.h>
+#include <netdb.h>
+
 #include <cstring>
 
-#include "default_trie.h"
 #include "request.h"
 #include "server_defaults.h"
 
-using ostp::libcc::data_structures::DefaultTrie;
 using ostp::servercc::Request;
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
@@ -14,7 +15,7 @@ using ostp::servercc::server::UdpServer;
 using std::string;
 using std::vector;
 
-// See tcp.h for documentation.
+/// See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port, ServerMode mode, const string group,
                      const vector<string> interfaces)
     : Server(port, mode), group(group) {
@@ -109,18 +110,18 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group,
     this->server_addr = addr;
 }
 
-// See tcp.h for documentation.
+/// See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port, const string group, const vector<string> interfaces)
     : UdpServer(port, SERVERCC_DEFAULT_MODE, group, interfaces) {}
 
-// See tcp.h for documentation.
+/// See tcp.h for documentation.
 UdpServer::UdpServer(const string group, const vector<string> interfaces)
     : UdpServer(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE, group, interfaces) {}
 
-// See tcp.h for documentation.
+/// See tcp.h for documentation.
 UdpServer::~UdpServer() { close(this->server_socket_fd); }
 
-// See server.h for documentation.
+/// See server.h for documentation.
 [[noreturn]] void UdpServer::run() {
     while (true) {
         // Read from the socket.

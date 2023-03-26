@@ -5,11 +5,7 @@
 #include <vector>
 
 #include "abstract_server.h"
-#include "default_trie.h"
-#include "status_or.h"
 
-using ostp::libcc::data_structures::DefaultTrie;
-using ostp::libcc::utils::StatusOr;
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
 using std::string;
@@ -50,7 +46,7 @@ class UdpServer : virtual public Server {
     /// Destructor for the server.
     ~UdpServer();
 
-    // See server.h for documentation.
+    /// See server.h for documentation.
     [[noreturn]] void run();
 };
 
