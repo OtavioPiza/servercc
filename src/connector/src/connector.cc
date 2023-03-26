@@ -38,10 +38,10 @@ void Connector::run_client(int fd) {
         // Enter a read loop.
         while (true) {
             // Read the request.
-            StatusOr<std::string> request = client.receive_message();
+            StatusOr<std::string> message = client.receive_message();
 
             // Check if the client disconnected.
-            if (request.failed()) {
+            if (message.failed()) {
                 // Remove the client from the map.
                 clients.erase(client.get_fd());
 
@@ -53,14 +53,17 @@ void Connector::run_client(int fd) {
             }
 
             // Get the processor for the request.
-            int space_index = request.result.find(' ');
-            std::string type = request.result.substr(0, space_index);
-
-            // Echo the request.
-            std::cout << "Request in " << client.get_fd() << ": " << request.result << std::endl;
+            int i;
+            for (i = 0; i < message.result.size() && !isspace(message.result[i]); i++)
+                ;
 
             // Create the connector request.
+            Request request(client.get_fd(), client.get_addr());
+            request.data = message.result;
+            request.protocol = std::string(&message.result[0], i);
+
             // Process the request.
+            processors.get(&message.result[0], i)(std::move(request));
         }
     });
 

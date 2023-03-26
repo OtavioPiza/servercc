@@ -32,9 +32,6 @@ class MulticastClient : virtual public Client {
     /// The time-to-live for multicast packets.
     const uint8_t ttl;
 
-    /// The socket address of the multicast group.
-    struct sockaddr_in client_address;
-
    public:
     // Constructors
 

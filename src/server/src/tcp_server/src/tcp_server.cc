@@ -113,8 +113,7 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
         std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
 
         // Try to read from the client and records its address.
-        Request request;
-        request.fd = client_socket_fd;
+        Request request(client_socket_fd, std::make_shared<struct sockaddr>());
         int addr_len = sizeof(struct sockaddr);
         int bytes_read = recvfrom(client_socket_fd, &buffer[0], buffer.size(), 0, request.addr.get(),
                                   (socklen_t *)&addr_len);

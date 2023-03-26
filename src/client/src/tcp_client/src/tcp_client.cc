@@ -119,6 +119,11 @@ StatusOr<std::string> TcpClient::receive_message() {
         return StatusOr<std::string>(Status::ERROR, "Could not receive message.", "");
     }
 
+    // If we received 0 bytes, the server has closed the connection.
+    if (bytes_received == 0) {
+        return StatusOr<std::string>(Status::ERROR, "Server has closed the connection.", "");
+    }
+
     // Return the message.
     return StatusOr<std::string>(Status::SUCCESS, "Message received successfully.",
                                  std::string(buffer, bytes_received));

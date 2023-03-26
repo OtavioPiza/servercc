@@ -127,7 +127,7 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
         std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
 
         // Try to read from the client and store the
-        Request request;
+        Request request(-1, std::make_shared<struct sockaddr>());
         int addr_len = sizeof(struct sockaddr);
         int bytes_read = recvfrom(this->server_socket_fd, &buffer[0], buffer.size(), 0,
                                   request.addr.get(), (socklen_t *)&addr_len);
@@ -138,7 +138,6 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
             ;
 
         // Move data into the request.
-        request.fd = -1;
         request.protocol = std::string(buffer.begin(), buffer.begin() + i);
         request.data = std::string(buffer.begin(), buffer.end());
 

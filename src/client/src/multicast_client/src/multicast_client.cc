@@ -44,9 +44,10 @@ StatusOr<bool> MulticastClient::open_socket() {
     }
 
     // Set the address.
-    client_address.sin_family = AF_INET;
-    client_address.sin_addr.s_addr = inet_addr(get_address().c_str());
-    client_address.sin_port = htons(get_port());
+    struct sockaddr_in *client_address = reinterpret_cast<struct sockaddr_in *>(client_addr.get());
+    client_address->sin_family = AF_INET;
+    client_address->sin_addr.s_addr = inet_addr(get_address().c_str());
+    client_address->sin_port = htons(get_port());
 
     // Set the file descriptor.
     client_fd = socket_fd;
@@ -72,7 +73,7 @@ StatusOr<bool> MulticastClient::close_socket() {
     // Set the socket file and return.
     client_fd = -1;
     is_socket_open = false;
-    client_address = {};
+    // client_address = {};
 
     // Return.
     return StatusOr<bool>(Status::SUCCESS, "Socket closed successfully.", true);
@@ -87,7 +88,7 @@ StatusOr<int> MulticastClient::send_message(const std::string &message) {
 
     // Send the message.
     int bytes_sent = sendto(client_fd, message.c_str(), message.size(), 0,
-                            (struct sockaddr *)&client_address, sizeof(client_address));
+                            client_addr.get(), sizeof(client_addr));
     if (bytes_sent < 0) {
         perror("sendto");
         return StatusOr<int>(Status::ERROR, "Failed to send message.", 0);

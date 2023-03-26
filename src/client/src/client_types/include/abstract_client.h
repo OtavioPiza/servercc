@@ -1,6 +1,9 @@
 #ifndef SERVERCC_ABSTRACT_CLIENT_H
 #define SERVERCC_ABSTRACT_CLIENT_H
 
+#include <sys/socket.h>
+
+#include <memory>
 #include <string>
 
 #include "status_or.h"
@@ -27,6 +30,9 @@ class Client {
     /// Whether the socket is open.
     bool is_socket_open;
 
+    /// The clients addr.
+    std::shared_ptr<struct sockaddr> client_addr;
+
     // Constructors
 
     /// Constructs a client with the specified address and port.
@@ -35,7 +41,9 @@ class Client {
     ///     server_address: The server's address.
     ///     port: The server's port.
     Client(const std::string server_address, const uint16_t port)
-        : server_address(server_address), port(port), is_socket_open(false), client_fd(-1) {}
+        : server_address(server_address), port(port), is_socket_open(false), client_fd(-1) {
+        client_addr = std::make_shared<struct sockaddr>();
+    }
 
    public:
     // Getters
@@ -63,6 +71,12 @@ class Client {
     /// Returns:
     ///     Whether the socket is open.
     virtual bool is_open() { return is_socket_open; }
+
+    /// Gets the client's addr.
+    ///
+    /// Returns:
+    ///     A shared pointer to the client's addr.
+    virtual std::shared_ptr<struct sockaddr> get_addr() { return client_addr; }
 
     // Virtual Methods
 
