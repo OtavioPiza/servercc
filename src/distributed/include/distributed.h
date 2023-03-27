@@ -1,0 +1,4 @@
+#ifndef SERVERCC_DISTRIBUTED_H
+#define SERVERCC_DISTRIBUTED_H
+
+#endif
