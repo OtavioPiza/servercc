@@ -2,7 +2,8 @@
 #define SERVERCC_H
 
 #include "client.h"
-#include "server.h"
 #include "connector.h"
+#include "distributed.h"
+#include "server.h"
 
 #endif
