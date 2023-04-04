@@ -135,12 +135,12 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
 
         // Find the first whitespace character.
         int i;
-        for (i = 0; i < buffer.size() && !isspace(buffer[i]); i++)
+        for (i = 0; i < bytes_read && !isspace(buffer[i]); i++)
             ;
 
         // Move data into the request.
         request.protocol = std::string(buffer.begin(), buffer.begin() + i);
-        request.data = std::string(buffer.begin(), buffer.end());
+        request.data = std::string(buffer.begin(), buffer.begin() + bytes_read);
 
         // Look for the processor that handles the provided protocol and send the request to it.
         protocol_processors.get(&buffer[0], i)(std::move(request));

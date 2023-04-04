@@ -123,12 +123,12 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
 
         // Find the first whitespace character.
         int i;
-        for (i = 0; i < buffer.size() && !isspace(buffer[i]); i++)
+        for (i = 0; i < bytes_read && !isspace(buffer[i]); i++)
             ;
 
         // Move data to the request.
-        request.protocol = std::string(&buffer[0], i);
-        request.data = std::string(&buffer[i + 1], bytes_read - i - 1);
+        request.protocol = std::string(buffer.begin(), buffer.begin() + i);
+        request.data = std::string(buffer.begin(), buffer.begin() + bytes_read);
 
         // Look for the processor that handles the provided protocol and send the request to it.
         protocol_processors.get(&buffer[0], i)(std::move(request));

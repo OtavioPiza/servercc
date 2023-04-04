@@ -72,7 +72,7 @@ void DistributedServer::handle_connect_request(const Request request) {
     // Find the port of the peer server that sent the request by looking after
     // the first space in the request.
     int space_index;
-    for (space_index = 0; space_index < request.data.size() && !isspace(request.data[space_index]);
+    for (space_index = 0; space_index < request.data.length() && !isspace(request.data[space_index]);
          space_index++)
         ;
 
@@ -88,6 +88,7 @@ void DistributedServer::handle_connect_request(const Request request) {
     // If the ip address is the same as the interface ip then ignore the
     // request.
     if (ip == interface_ip) {
+        cout << "Ignore self" << endl;
         close(request.fd);
         return;
     }
