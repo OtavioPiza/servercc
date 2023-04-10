@@ -17,8 +17,9 @@ using std::vector;
 
 /// See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port, ServerMode mode, const string group,
-                     const vector<string> interfaces)
-    : Server(port, mode), group(group) {
+                     const vector<string> interfaces,
+                     std::function<void(const Request)> default_processor)
+    : Server(port, mode, default_processor), group(group) {
     // Setup hints for udp with multicast.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
     memset(hints, 0, sizeof(struct addrinfo));
@@ -111,12 +112,15 @@ UdpServer::UdpServer(int16_t port, ServerMode mode, const string group,
 }
 
 /// See tcp.h for documentation.
-UdpServer::UdpServer(int16_t port, const string group, const vector<string> interfaces)
-    : UdpServer(port, SERVERCC_DEFAULT_MODE, group, interfaces) {}
+UdpServer::UdpServer(int16_t port, const string group, const vector<string> interfaces,
+                     std::function<void(const Request)> default_processor)
+    : UdpServer(port, SERVERCC_DEFAULT_MODE, group, interfaces, default_processor) {}
 
 /// See tcp.h for documentation.
-UdpServer::UdpServer(const string group, const vector<string> interfaces)
-    : UdpServer(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE, group, interfaces) {}
+UdpServer::UdpServer(const string group, const vector<string> interfaces,
+                     std::function<void(const Request)> default_processor)
+    : UdpServer(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE, group, interfaces,
+                default_processor) {}
 
 /// See tcp.h for documentation.
 UdpServer::~UdpServer() { close(this->server_socket_fd); }

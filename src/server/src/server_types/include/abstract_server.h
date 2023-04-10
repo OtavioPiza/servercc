@@ -42,8 +42,9 @@ class Server {
     /// Arguments:
     ///     port: The port the server will listen on.
     ///     mode: The mode the server will run in.
-    ///     interfaces: The interfaces the server will listen on.
-    Server(uint16_t port, ServerMode mode) : port(port), mode(mode), protocol_processors(nullptr) {}
+    ///     default_processor: The default processor for the server.
+    Server(uint16_t port, ServerMode mode, std::function<void(const Request)> default_processor)
+        : port(port), mode(mode), protocol_processors(default_processor){};
 
     // Getters
 

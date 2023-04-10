@@ -15,16 +15,17 @@ class TcpServer : virtual public Server {
     /// Arguments:
     ///     port: The port the server will listen on.
     ///     mode: The mode the server will run in.
-    TcpServer(int16_t port, ServerMode mode);
+    ///     default_processor: The default processor for the server.
+    TcpServer(int16_t port, ServerMode mode, std::function<void(const Request)> default_processor);
 
     /// Constructs a server with default mode.
     ///
     /// Arguments:
     ///     port: The port the server will listen on.
-    TcpServer(int16_t port);
+    TcpServer(int16_t port, std::function<void(const Request)> default_processor);
 
     /// Constructs a server with default port and mode.
-    TcpServer();
+    TcpServer(std::function<void(const Request)> default_processor);
 
     /// Destructor for the server.
     ~TcpServer();
