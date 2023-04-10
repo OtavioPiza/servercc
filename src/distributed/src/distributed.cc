@@ -144,6 +144,9 @@ void DistributedServer::handle_connect_ack_request(const Request request) {
     peer_fd_to_ip[peer_server_fd] = ip;
     peer_fd_to_commands[peer_server_fd] = std::vector<string>();
 
+    // Send connect_ack to the peer server.
+    connector.send_message(peer_server_fd, "connect_ack");
+
     // Return.
     return;
 }
