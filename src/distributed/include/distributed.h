@@ -5,7 +5,7 @@
 #include <semaphore>
 #include <string>
 #include <thread>
-#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "connector.h"
@@ -22,11 +22,12 @@ using ostp::servercc::connector::Connector;
 using ostp::servercc::server::TcpServer;
 using ostp::servercc::server::UdpServer;
 using std::binary_semaphore;
+using std::function;
 using std::pair;
 using std::queue;
 using std::string;
 using std::thread;
-using std::unordered_map;
+using std::unordered_set;
 
 namespace ostp::servercc::distributed {
 
@@ -61,7 +62,7 @@ class DistributedServer {
     ///     port: The port to use for the distributed server.
     ///     default_handler: The default handler to use for the distributed server.
     DistributedServer(const string interface_name, const string interface_ip, const string group,
-                      const uint16_t port, std::function<void(const Request)> default_handler);
+                      const uint16_t port, function<void(const Request)> default_handler);
 
     // Methods
 
@@ -73,7 +74,9 @@ class DistributedServer {
     /// Arguments:
     ///     protocol: The protocol to add a handler for.
     ///     handler: The handler to add.
-    StatusOr<bool> add_handler(const string protocol, std::function<void(const Request)> handler);
+    StatusOr<void> add_handler(const string protocol, function<void(const Request)> handler);
+
+    // Server utilities.
 
     /// Adds a log message to the log queue.
     ///
@@ -82,11 +85,31 @@ class DistributedServer {
     ///     message: The log message.
     void log(const Status status, const string message);
 
+    /// Method to send a multicast message to all the servers.
+    ///
+    /// Arguments:
+    ///     message: The message to send.
+    StatusOr<bool> multicast_message(const string message);
+
+    /// Method to send a message to a specific server.
+    ///
+    /// Arguments:
+    ///     ip: The ip address of the server to send the message to.
+    ///     message: The message to send.
+    StatusOr<bool> send_message(const string ip, const string message);
+
+    /// Method to send a message to a specific server.
+    ///
+    /// Arguments:
+    ///     fd: The file descriptor of the server to send the message to.
+    ///     message: The message to send.
+    StatusOr<bool> send_message(const int fd, const string message);
+
    private:
     // Protocol handling datastructures.
 
     /// Trie to store the protocol commands supported by the distributed server.
-    DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
+    DefaultTrie<char, function<void(const Request)>> protocol_processors;
 
     // Logging datastructures.
 
@@ -111,12 +134,9 @@ class DistributedServer {
     MulticastClient multicast_client;
 
     // Peer server datastructures.
+    unordered_set<string> peers;
 
-    /// Mapping of peer servers' ip addresses to their file descriptors.
-    unordered_map<string, int> peer_ip_to_fd;
-
-    /// Mapping of peer servers' file descriptors to their ip addresses.
-    unordered_map<int, string> peer_fd_to_ip;
+    /// The list of peers connected to the distributed server.
 
     // Service threads.
 
@@ -158,7 +178,7 @@ class DistributedServer {
     ///
     /// Arguments:
     ///     request: The request to handle.
-    void handle_peer_disconnect(int fd);
+    void handle_peer_disconnect(const string &ip);
 
     /// Method to forward the specified request to the protocol processors.
     ///

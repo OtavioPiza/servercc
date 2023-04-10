@@ -23,13 +23,15 @@ using ostp::servercc::client::TcpClient;
 using ostp::servercc::distributed::DistributedServer;
 using std::shared_ptr;
 using std::string;
+using std::thread;
+using std::function;
 
 // Constructors.
 
 /// See distributed.h for documentation.
 DistributedServer::DistributedServer(const string interface_name, const string interface_ip,
                                      const string group, const uint16_t port,
-                                     std::function<void(const Request)> default_handler)
+                                     function<void(const Request)> default_handler)
     : interface_name(interface_name),
       interface_ip(interface_ip),
       group(group),
@@ -46,19 +48,17 @@ DistributedServer::DistributedServer(const string interface_name, const string i
           [this](const Request request) {
               this->forward_request_to_protocol_processors(std::move(request));
           },
-          [this](int fd) { this->handle_peer_disconnect(fd); }),
+          [this](const string &ip) { this->handle_peer_disconnect(ip); }),
       multicast_client(interface_name, group, port),
       protocol_processors(default_handler),
       log_queue_semaphore(0) {
     // Add the connect request handler to the UDP server.
-    udp_server.set_processor(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT, [this](const Request request) {
-        this->handle_connect(request);
-    });
+    udp_server.set_processor(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT,
+                             [this](const Request request) { this->handle_connect(request); });
 
     // Add the connect_ack request handler to the TCP server.
-    tcp_server.set_processor(
-        SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT_ACK,
-        [this](const Request request) { this->handle_connect_ack(request); });
+    tcp_server.set_processor(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT_ACK,
+                             [this](const Request request) { this->handle_connect_ack(request); });
 };
 
 // Public methods.
@@ -77,16 +77,16 @@ void DistributedServer::run() {
 };
 
 /// See distributed.h for documentation.
-StatusOr<bool> DistributedServer::add_handler(const string protocol,
+StatusOr<void> DistributedServer::add_handler(const string protocol,
                                               const std::function<void(const Request)> handler) {
     // Check if the protocol is already registered.
     if (protocol_processors.contains(protocol.c_str(), protocol.length())) {
-        return StatusOr<bool>(Status::OK, "Protocol already registered.", false);
+        return StatusOr<void>(Status::ERROR, "Protocol already registered.");
     }
 
     // Add the protocol to the protocol processors.
     protocol_processors.insert(protocol.c_str(), protocol.length(), handler);
-    return StatusOr<bool>(Status::OK, nullptr, false);
+    return StatusOr<void>(Status::OK, nullptr);
 }
 
 // Utility methods.
@@ -204,13 +204,10 @@ void DistributedServer::handle_connect(const Request request) {
     }
 
     // Add the peer server to the connector and mappings.
-    int peer_server_fd = connector.add_client(peer_server);
-    peer_ip_to_fd[ip] = peer_server_fd;
-    peer_fd_to_ip[peer_server_fd] = ip;
-    peer_fd_to_commands[peer_server_fd] = std::vector<string>();
+    string address = connector.add_client(peer_server);
+    peers.insert(address);
 
     // Return.
-    close(request.fd);
     return;
 }
 
@@ -235,27 +232,24 @@ void DistributedServer::handle_connect_ack(const Request request) {
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
 
     // Add the peer server to the connector and mappings.
-    int peer_server_fd = connector.add_client(TcpClient(request.fd, ip, peer_port));
-    peer_ip_to_fd[ip] = peer_server_fd;
-    peer_fd_to_ip[peer_server_fd] = ip;
+    string address = connector.add_client(TcpClient(request.fd, ip, peer_port));
 
     // Send connect_ack to the peer server.
-    connector.send_message(peer_server_fd, "connect_ack");
+    connector.send_message(address, "connect_ack");
 
     // Return.
     return;
 }
 
 /// See distributed.h for documentation.
-void DistributedServer::handle_peer_disconnect(int fd) {
+void DistributedServer::handle_peer_disconnect(const string &ip) {
     // Remove the peer server from the connector and mappings.
-    log(Status::INFO,
-        "Peer server disconnected. ip: " + peer_fd_to_ip[fd] + " fd: " + std::to_string(fd));
+    log(Status::INFO, "Peer server disconnected. ip: " + ip);
 
     // Remove the peer server from the connector and mappings.
-    peer_ip_to_fd.erase(peer_fd_to_ip[fd]);
-    peer_fd_to_ip.erase(fd);
-    close(fd);
+    peers.erase(ip);
+
+    // Make callback to protocol processors. TODO
 }
 
 /// See distributed.h for documentation.

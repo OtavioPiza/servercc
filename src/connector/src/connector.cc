@@ -1,13 +1,14 @@
 #include "connector.h"
 
-#include <thread>
-
+using ostp::libcc::utils::Status;
+using ostp::libcc::utils::StatusOr;
 using ostp::servercc::Request;
 using ostp::servercc::connector::Connector;
+using std::string;
 
 /// See connector.h for documentation.
 Connector::Connector(const std::function<void(const Request)> default_processor,
-                     const std::function<void(int)> disconnect_handler)
+                     const std::function<void(const string)> disconnect_handler)
     : processors(default_processor), disconnect_handler(disconnect_handler) {}
 
 /// See connector.h for documentation.
@@ -20,18 +21,19 @@ void Connector::add_processor(const std::string& path,
 }
 
 /// See connector.h for documentation.
-int Connector::add_client(TcpClient client) {
+string Connector::add_client(TcpClient client) {
+    // Open the socket and run the client.
     client.open_socket();
-    clients.insert({client.get_fd(), std::move(client)});
-    run_client(client.get_fd());
-    return client.get_fd();
+    run_client(client);
+
+    // Add the client to the map and return the address.
+    const string address = client.get_address() + ":" + std::to_string(client.get_port());
+    clients.insert({address, std::move(client)});
+    return std::move(address);
 }
 
 /// See connector.h for documentation.
-void Connector::run_client(int fd) {
-    // Get the client from the map.
-    TcpClient& client = clients.at(fd);
-
+void Connector::run_client(TcpClient& client) {
     // Run the client.
     std::thread client_thread([&client, this]() {
         // Enter a read loop.
@@ -42,10 +44,13 @@ void Connector::run_client(int fd) {
             // Check if the client disconnected.
             if (message.failed()) {
                 // Remove the client from the map.
-                clients.erase(client.get_fd());
+                clients.erase(client.get_address() + ":" + std::to_string(client.get_port()));
 
                 // Call the disconnect handler.
-                disconnect_handler(client.get_fd());
+                disconnect_handler(client.get_address());
+
+                // Close the socket.
+                client.close_socket();
 
                 // Exit the loop.
                 break;
@@ -71,10 +76,13 @@ void Connector::run_client(int fd) {
 }
 
 /// See connector.h for documentation.
-void Connector::send_message(int fd, const std::string& message) {
-    // Get the client from the map.
-    TcpClient& client = clients.at(fd);
+StatusOr<int> Connector::send_message(const string& address, const std::string& message) {
+    // Check if the client exists.
+    auto client = clients.find(address);
+    if (client == clients.end()) {
+        return StatusOr(Status::ERROR, "Client does not exist.", 0);
+    }
 
     // Send the message.
-    client.send_message(message);
+    return std::move(client->second.send_message(message));
 }

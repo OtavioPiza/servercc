@@ -2,6 +2,7 @@
 #define SERVERCC_CONNECTOR_H
 
 #include <functional>
+#include <string>
 #include <thread>
 #include <unordered_map>
 
@@ -12,6 +13,8 @@
 using ostp::libcc::data_structures::DefaultTrie;
 using ostp::servercc::Request;
 using ostp::servercc::client::TcpClient;
+using std::function;
+using std::string;
 using std::unordered_map;
 
 namespace ostp::servercc::connector {
@@ -20,20 +23,20 @@ namespace ostp::servercc::connector {
 class Connector {
    private:
     /// Default trie for processing requests.
-    DefaultTrie<char, std::function<void(const Request)>> processors;
+    DefaultTrie<char, function<void(const Request)>> processors;
 
     /// Handler for when a client disconnects.
-    const std::function<void(int)> disconnect_handler;
+    const function<void(const string)> disconnect_handler;
 
     /// A map of the current TCP clients identified by their socket file
     /// descriptor.
-    unordered_map<int, TcpClient> clients;
+    unordered_map<string, TcpClient> clients;
 
     /// Runs the specified client in a thread.
     ///
     /// Arguments:
-    ///     fd: The file descriptor of the client.
-    void run_client(int fd);
+    ///     client: The client to run.
+    void run_client(TcpClient &client);
 
    public:
     // Constructors
@@ -43,8 +46,8 @@ class Connector {
     /// Arguments:
     ///     default_processor: The default processor to use.
     ///     disconnect_handler: The handler to use when a client disconnects.
-    Connector(const std::function<void(const Request)> default_processor,
-              const std::function<void(int)> disconnect_handler);
+    Connector(const function<void(const Request)> default_processor,
+              const function<void(const string)> disconnect_handler);
 
     // Destructor
     ~Connector();
@@ -56,22 +59,22 @@ class Connector {
     /// Arguments:
     ///     path: The path to add the processor for.
     ///     processor: The processor to add.
-    void add_processor(const std::string& path, std::function<void(const Request)> processor);
+    void add_processor(const string& path, function<void(const Request)> processor);
 
     /// Adds a TCP client to the connector.
     ///
     /// Arguments:
     ///     client: The client to add.
     /// Returns:
-    ///     The file descriptor of the client.
-    int add_client(TcpClient client);
+    ///     The address:port of the client.
+    string add_client(TcpClient client);
 
     /// Send a message through the specified client.
     ///
     /// Arguments:
     ///     fd: The file descriptor of the client.
     ///     message: The message to send.
-    void send_message(int fd, const std::string& message);
+    StatusOr<int> send_message(const string& address, const string& message);
 };
 
 }  // namespace ostp::servercc::connector
