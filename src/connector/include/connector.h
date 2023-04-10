@@ -29,10 +29,6 @@ class Connector {
     /// descriptor.
     unordered_map<int, TcpClient> clients;
 
-    /// A map of the current running client threads identified by their socket
-    /// file descriptor.
-    unordered_map<int, std::thread> client_threads;
-
     /// Runs the specified client in a thread.
     ///
     /// Arguments:

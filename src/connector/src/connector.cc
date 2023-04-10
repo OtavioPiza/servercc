@@ -66,8 +66,8 @@ void Connector::run_client(int fd) {
         }
     });
 
-    // Add the client thread to the map.
-    client_threads.insert({fd, std::move(client_thread)});
+    // Detach the thread.
+    client_thread.detach();
 }
 
 /// See connector.h for documentation.
