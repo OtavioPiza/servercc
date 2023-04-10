@@ -41,11 +41,17 @@ DistributedServer::DistributedServer(const string interface_name, const string i
     udp_server.set_processor(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT, [this](const Request request) {
         this->handle_connect_request(request);
     });
+    udp_server.set_default_processor([this](const Request request) {
+        this->forward_request_to_protocol_processors(std::move(request));
+    });
 
     // Add the connect_ack request handler to the TCP server.
     tcp_server.set_processor(
         SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT_ACK,
         [this](const Request request) { this->handle_connect_ack_request(request); });
+    tcp_server.set_default_processor([this](const Request request) {
+        this->forward_request_to_protocol_processors(std::move(request));
+    });
 };
 
 void DistributedServer::run() {
