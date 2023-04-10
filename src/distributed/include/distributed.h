@@ -1,7 +1,10 @@
 #ifndef SERVERCC_DISTRIBUTED_H
 #define SERVERCC_DISTRIBUTED_H
 
+#include <queue>
+#include <semaphore>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -12,12 +15,17 @@
 #include "tcp_server.h"
 #include "udp_server.h"
 
+using ostp::libcc::utils::Status;
 using ostp::servercc::Request;
 using ostp::servercc::client::MulticastClient;
 using ostp::servercc::connector::Connector;
 using ostp::servercc::server::TcpServer;
 using ostp::servercc::server::UdpServer;
+using std::binary_semaphore;
+using std::pair;
+using std::queue;
 using std::string;
+using std::thread;
 using std::unordered_map;
 
 namespace ostp::servercc::distributed {
@@ -72,6 +80,17 @@ class DistributedServer {
     /// Trie to store the protocol commands supported by the distributed server.
     DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
 
+    // Logging data.
+
+    /// The semaphore to protect the log queue.
+    binary_semaphore log_queue_semaphore;
+
+    /// The queue of log messages.
+    queue<pair<const Status, const string>> log_queue;
+
+    /// The thread to run the logger service.
+    thread logger_service_thread;
+
     // Handlers.
 
     /// Method to handle a connect request.
@@ -97,6 +116,18 @@ class DistributedServer {
     /// Arguments:
     ///     request: The request to handle.
     void handle_peer_disconnect(int fd);
+
+    // Logging methods.
+
+    /// Waits for a log message to be added to the log queue and prints it indefinitely.
+    void run_logger_service();
+
+    /// Adds a log message to the log queue.
+    ///
+    /// Arguments:
+    ///     status: The status of the log message.
+    ///     message: The log message.
+    void log(const Status status, const string message);
 
    public:
     /// Creates a new DistributedServer on the specified interface, group and port.
