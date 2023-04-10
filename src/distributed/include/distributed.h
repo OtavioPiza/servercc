@@ -24,6 +24,8 @@ namespace ostp::servercc::distributed {
 /// A distributed server that can be used to create a distributed system.
 class DistributedServer {
    private:
+    // Server attributes.
+
     /// The name of the interface to use for the distributed server.
     const string interface_name;
 
@@ -36,6 +38,8 @@ class DistributedServer {
     /// The port to use for the distributed server.
     const uint16_t port;
 
+    // Server components.
+
     /// The UDP server to handle multicast requests.
     UdpServer udp_server;
 
@@ -47,6 +51,8 @@ class DistributedServer {
 
     /// The multicast client to send multicast requests.
     MulticastClient multicast_client;
+
+    // Data structures.
 
     /// Mapping of peer servers' ip addresses to their file descriptors.
     unordered_map<string, int> peer_ip_to_fd;
@@ -62,6 +68,9 @@ class DistributedServer {
     /// a file descriptor).
     unordered_map<string, std::vector<int>> command_to_peer_fds;
 
+    /// Trie to store the protocol commands supported by the distributed server.
+    DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
+
     // Handlers.
 
     /// Method to handle a connect request.
@@ -76,6 +85,18 @@ class DistributedServer {
     ///     request: The request to handle.
     void handle_connect_ack_request(const Request request);
 
+    /// Method to forward the specified request to the protocol processors.
+    ///
+    /// Arguments:
+    ///     request: The request to forward.
+    void forward_request_to_protocol_processors(const Request request);
+
+    /// Method to handle a disconnect request.
+    ///
+    /// Arguments:
+    ///     request: The request to handle.
+    void handle_peer_disconnect(int fd);
+
    public:
     /// Creates a new DistributedServer on the specified interface, group and port.
     ///
@@ -87,8 +108,10 @@ class DistributedServer {
     ///     interface_ip: The interface ip address.
     ///     group: The group ip address.
     ///     port: The port to use for the distributed server.
+    ///     default_handler: The default handler to use for the distributed server.
     DistributedServer(const string interface_name, const string interface_ip, const string group,
-                      const uint16_t port);
+                      const uint16_t port,
+                      std::function<void(const Request)> default_handler);
 
     // Methods
 

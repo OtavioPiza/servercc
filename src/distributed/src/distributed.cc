@@ -6,6 +6,7 @@
 #include <memory>
 #include <thread>
 
+#include "distributed_protocols.h"
 #include "multicast_client.h"
 #include "status_or.h"
 #include "tcp_client.h"
@@ -21,24 +22,30 @@ using std::string;
 
 /// See distributed.h for documentation.
 DistributedServer::DistributedServer(const string interface_name, const string interface_ip,
-                                     const string group, const uint16_t port)
+                                     const string group, const uint16_t port,
+                                     std::function<void(const Request)> default_handler)
     : interface_name(interface_name),
       interface_ip(interface_ip),
       group(group),
       port(port),
       udp_server(port, group, {interface_ip}),
       tcp_server(port),
-      connector([](const Request request) { cout << request.data << endl; },
-                [](int fd) { cout << "Peer server disconnected." << endl; }),
-      multicast_client(interface_name, group, port) {
-    // Add the connect request handler.
-    udp_server.set_processor(
-        "connect", [this](const Request request) { this->handle_connect_request(request); });
-
-    // Add the connect_ack request handler.
-    tcp_server.set_processor("connect_ack", [this](const Request request) {
-        this->handle_connect_ack_request(request);
+      connector(
+          [this](const Request request) {
+              this->forward_request_to_protocol_processors(std::move(request));
+          },
+          [this](int fd) { this->handle_peer_disconnect(fd); }),
+      multicast_client(interface_name, group, port),
+      protocol_processors(default_handler) {
+    // Add the connect request handler to the UDP server.
+    udp_server.set_processor(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT, [this](const Request request) {
+        this->handle_connect_request(request);
     });
+
+    // Add the connect_ack request handler to the TCP server.
+    tcp_server.set_processor(
+        SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT_ACK,
+        [this](const Request request) { this->handle_connect_ack_request(request); });
 };
 
 void DistributedServer::run() {
@@ -56,7 +63,8 @@ void DistributedServer::run() {
 
     // Send multicast requests to find peer servers.
     multicast_client.open_socket();
-    multicast_client.send_message("connect " + std::to_string(port));
+    multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
+                                  std::to_string(port));
 
     // Wait for the servers to stop.
     udp_server_thread.join();
@@ -72,8 +80,8 @@ void DistributedServer::handle_connect_request(const Request request) {
     // Find the port of the peer server that sent the request by looking after
     // the first space in the request.
     int space_index;
-    for (space_index = 0; space_index < request.data.length() && !isspace(request.data[space_index]);
-         space_index++)
+    for (space_index = 0;
+         space_index < request.data.length() && !isspace(request.data[space_index]); space_index++)
         ;
 
     // Get the port from the connect request.
@@ -153,4 +161,17 @@ void DistributedServer::handle_connect_ack_request(const Request request) {
 
     // Return.
     return;
+}
+
+/// See distributed.h for documentation.
+void DistributedServer::forward_request_to_protocol_processors(const Request request) {
+    protocol_processors.get(request.protocol.c_str(),
+                            request.protocol.length())(std::move(request));
+}
+
+/// See distributed.h for documentation.
+void DistributedServer::handle_peer_disconnect(int fd) {
+    // Remove the peer server from the connector and mappings.
+    cout << "Peer server disconnected."
+         << " ip: " << peer_fd_to_ip[fd] << " fd: " << fd << endl;
 }
