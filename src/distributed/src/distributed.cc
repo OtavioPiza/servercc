@@ -8,9 +8,11 @@
 
 #include "distributed_protocols.h"
 #include "multicast_client.h"
+#include "status.h"
 #include "status_or.h"
 #include "tcp_client.h"
 
+using ostp::libcc::utils::Status;
 using ostp::libcc::utils::StatusOr;
 using ostp::servercc::client::MulticastClient;
 using ostp::servercc::client::TcpClient;
@@ -52,29 +54,6 @@ DistributedServer::DistributedServer(const string interface_name, const string i
     tcp_server.set_processor(
         SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT_ACK,
         [this](const Request request) { this->handle_connect_ack_request(request); });
-};
-
-void DistributedServer::run() {
-    // Run the servers in the background threads.
-    std::thread udp_server_thread([&]() {
-        cout << "Running UDP server." << endl;
-        this->udp_server.run();
-        cout << "UDP server stopped." << endl;
-    });
-    std::thread tcp_server_thread([&]() {
-        cout << "Running TCP server." << endl;
-        this->tcp_server.run();
-        cout << "TCP server stopped." << endl;
-    });
-
-    // Send multicast requests to find peer servers.
-    multicast_client.open_socket();
-    multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
-                                  std::to_string(port));
-
-    // Wait for the servers to stop.
-    udp_server_thread.join();
-    tcp_server_thread.join();
 };
 
 // Handlers.
@@ -180,4 +159,43 @@ void DistributedServer::handle_peer_disconnect(int fd) {
     // Remove the peer server from the connector and mappings.
     cout << "Peer server disconnected."
          << " ip: " << peer_fd_to_ip[fd] << " fd: " << fd << endl;
+}
+
+// Public methods.
+
+/// See distributed.h for documentation.
+void DistributedServer::run() {
+    // Run the servers in the background threads.
+    std::thread udp_server_thread([&]() {
+        cout << "Running UDP server." << endl;
+        this->udp_server.run();
+        cout << "UDP server stopped." << endl;
+    });
+    std::thread tcp_server_thread([&]() {
+        cout << "Running TCP server." << endl;
+        this->tcp_server.run();
+        cout << "TCP server stopped." << endl;
+    });
+
+    // Send multicast requests to find peer servers.
+    multicast_client.open_socket();
+    multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
+                                  std::to_string(port));
+
+    // Wait for the servers to stop.
+    udp_server_thread.join();
+    tcp_server_thread.join();
+};
+
+/// See distributed.h for documentation.
+StatusOr<bool> DistributedServer::add_handler(const string protocol,
+                                              const std::function<void(const Request)> handler) {
+    // Check if the protocol is already registered.
+    if (protocol_processors.contains(protocol.c_str(), protocol.length())) {
+        return StatusOr<bool>(Status::OK, "Protocol already registered.", false);
+    }
+
+    // Add the protocol to the protocol processors.
+    protocol_processors.insert(protocol.c_str(), protocol.length(), handler);
+    return StatusOr<bool>(Status::OK, nullptr, false);
 }

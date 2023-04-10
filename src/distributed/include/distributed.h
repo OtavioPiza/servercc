@@ -8,6 +8,7 @@
 #include "connector.h"
 #include "multicast_client.h"
 #include "request.h"
+#include "status_or.h"
 #include "tcp_server.h"
 #include "udp_server.h"
 
@@ -110,12 +111,19 @@ class DistributedServer {
     ///     port: The port to use for the distributed server.
     ///     default_handler: The default handler to use for the distributed server.
     DistributedServer(const string interface_name, const string interface_ip, const string group,
-                      const uint16_t port,
-                      std::function<void(const Request)> default_handler);
+                      const uint16_t port, std::function<void(const Request)> default_handler);
 
     // Methods
 
+    /// Method to run the distributed server.
     void run();
+
+    /// Method to add a new handler for the specified protocol.
+    ///
+    /// Arguments:
+    ///     protocol: The protocol to add a handler for.
+    ///     handler: The handler to add.
+    StatusOr<bool> add_handler(const string protocol, std::function<void(const Request)> handler);
 };
 
 }  // namespace ostp::servercc::distributed

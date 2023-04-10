@@ -23,7 +23,7 @@ TcpClient::TcpClient(const int socket, const std::string server_address, const u
 StatusOr<bool> TcpClient::open_socket() {
     // If the socket is already open, return.
     if (is_socket_open) {
-        return StatusOr<bool>(Status::SUCCESS, "Socket is already open.", true);
+        return StatusOr<bool>(Status::OK, "Socket is already open.", true);
     }
 
     // Allocate structures for socket address.
@@ -69,14 +69,14 @@ StatusOr<bool> TcpClient::open_socket() {
 
     // Mark the socket as open and return.
     is_socket_open = true;
-    return StatusOr<bool>(Status::SUCCESS, "Socket opened successfully.", true);
+    return StatusOr<bool>(Status::OK, "Socket opened successfully.", true);
 }
 
 /// See tcp_client.h for documentation.
 StatusOr<bool> TcpClient::close_socket() {
     // If the socket is already closed, return.
     if (client_fd == -1) {
-        return StatusOr<bool>(Status::SUCCESS, "Socket is already closed.", true);
+        return StatusOr<bool>(Status::OK, "Socket is already closed.", true);
     }
 
     // Close the socket.
@@ -85,7 +85,7 @@ StatusOr<bool> TcpClient::close_socket() {
     is_socket_open = false;
 
     // Return.
-    return StatusOr<bool>(Status::SUCCESS, "Socket closed successfully.", true);
+    return StatusOr<bool>(Status::OK, "Socket closed successfully.", true);
 }
 
 /// See tcp_client.h for documentation.
@@ -104,7 +104,7 @@ StatusOr<int> TcpClient::send_message(const std::string &message) {
     }
 
     // Return the number of bytes sent.
-    return StatusOr<int>(Status::SUCCESS, "Message sent successfully.", bytes_sent);
+    return StatusOr<int>(Status::OK, "Message sent successfully.", bytes_sent);
 }
 
 /// See tcp_client.h for documentation.
@@ -129,6 +129,6 @@ StatusOr<std::string> TcpClient::receive_message() {
     }
 
     // Return the message.
-    return StatusOr<std::string>(Status::SUCCESS, "Message received successfully.",
+    return StatusOr<std::string>(Status::OK, "Message received successfully.",
                                  std::string(buffer, bytes_received));
 }

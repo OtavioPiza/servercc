@@ -21,7 +21,7 @@ MulticastClient::MulticastClient(const std::string interface, const std::string 
 StatusOr<bool> MulticastClient::open_socket() {
     // If the socket is already open, return.
     if (is_socket_open) {
-        return StatusOr<bool>(Status::SUCCESS, "Socket is already open.", true);
+        return StatusOr<bool>(Status::OK, "Socket is already open.", true);
     }
 
     // Create a socket to multicast.
@@ -55,14 +55,14 @@ StatusOr<bool> MulticastClient::open_socket() {
     is_socket_open = true;
 
     // Return.
-    return StatusOr<bool>(Status::SUCCESS, "Socket opened successfully.", true);
+    return StatusOr<bool>(Status::OK, "Socket opened successfully.", true);
 }
 
 /// See udp_client.h for documentation.
 StatusOr<bool> MulticastClient::close_socket() {
     // If the socket is already closed, return.
     if (!is_socket_open) {
-        return StatusOr<bool>(Status::SUCCESS, "Socket is already closed.", true);
+        return StatusOr<bool>(Status::OK, "Socket is already closed.", true);
     }
 
     // Close the socket.
@@ -77,7 +77,7 @@ StatusOr<bool> MulticastClient::close_socket() {
     // client_address = {};
 
     // Return.
-    return StatusOr<bool>(Status::SUCCESS, "Socket closed successfully.", true);
+    return StatusOr<bool>(Status::OK, "Socket closed successfully.", true);
 };
 
 /// See udp_client.h for documentation.
@@ -96,7 +96,7 @@ StatusOr<int> MulticastClient::send_message(const std::string &message) {
     }
 
     // Return.
-    return StatusOr<int>(Status::SUCCESS, "Message sent successfully.", bytes_sent);
+    return StatusOr<int>(Status::OK, "Message sent successfully.", bytes_sent);
 }
 
 /// See udp_client.h for documentation.
@@ -115,6 +115,6 @@ StatusOr<std::string> MulticastClient::receive_message() {
     }
 
     // Return.
-    return StatusOr<std::string>(Status::SUCCESS, "Message received successfully.",
+    return StatusOr<std::string>(Status::OK, "Message received successfully.",
                                  std::string(buffer, bytes_received));
 }
