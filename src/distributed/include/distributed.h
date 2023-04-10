@@ -32,7 +32,7 @@ namespace ostp::servercc::distributed {
 
 /// A distributed server that can be used to create a distributed system.
 class DistributedServer {
-   private:
+   public:
     // Server attributes.
 
     /// The name of the interface to use for the distributed server.

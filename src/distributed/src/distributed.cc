@@ -21,7 +21,6 @@ using ostp::libcc::utils::StatusOr;
 using ostp::servercc::client::MulticastClient;
 using ostp::servercc::client::TcpClient;
 using ostp::servercc::distributed::DistributedServer;
-using std::endl;
 using std::shared_ptr;
 using std::string;
 
