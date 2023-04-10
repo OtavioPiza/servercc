@@ -60,6 +60,69 @@ DistributedServer::DistributedServer(const string interface_name, const string i
         [this](const Request request) { this->handle_connect_ack_request(request); });
 };
 
+// Sever services.
+
+/// See distributed.h for documentation.
+void DistributedServer::run_tcp_server() {
+    tcp_server_thread = std::thread([this]() {
+        log(Status::INFO, "Running TCP server.");
+        this->tcp_server.run();
+        log(Status::INFO, "TCP server stopped.");
+    });
+}
+
+/// See distributed.h for documentation.
+void DistributedServer::run_udp_server() {
+    udp_server_thread = std::thread([this]() {
+        log(Status::INFO, "Running UDP server.");
+        this->udp_server.run();
+        log(Status::INFO, "UDP server stopped.");
+    });
+}
+
+// Logging services.
+
+/// See distributed.h for documentation.
+void DistributedServer::run_logger_service() {
+    // Create a thread for the logger service.
+    logger_service_thread = std::thread([&]() {
+        while (true) {
+            const string sender = "DistributedServerLoggerService";
+
+            // Wait for a log message and then log it depending on the log level.
+            log_queue_semaphore.acquire();
+            std::pair<const Status, const string> log_message = std::move(log_queue.front());
+            log_queue.pop();
+
+            // Log the message.
+            switch (log_message.first) {
+                case Status::OK:
+                    log_ok(log_message.second, sender);
+                    break;
+
+                case Status::ERROR:
+                    log_error(log_message.second, sender);
+                    break;
+
+                case Status::WARNING:
+                    log_warn(log_message.second, sender);
+                    break;
+
+                default:
+                    log_info(log_message.second, sender);
+                    break;
+            }
+        }
+    });
+}
+
+/// See distributed.h for documentation.
+void DistributedServer::log(const Status status, const string message) {
+    // Add the log message to the queue and notify the logger service.
+    log_queue.push(std::make_pair(status, message));
+    log_queue_semaphore.release();
+}
+
 // Handlers.
 
 /// See distributed.h for documentation.
@@ -156,44 +219,37 @@ void DistributedServer::handle_connect_ack_request(const Request request) {
 }
 
 /// See distributed.h for documentation.
-void DistributedServer::forward_request_to_protocol_processors(const Request request) {
-    protocol_processors.get(request.protocol.c_str(),
-                            request.protocol.length())(std::move(request));
-}
-
-/// See distributed.h for documentation.
 void DistributedServer::handle_peer_disconnect(int fd) {
     // Remove the peer server from the connector and mappings.
     log(Status::INFO,
         "Peer server disconnected. ip: " + peer_fd_to_ip[fd] + " fd: " + std::to_string(fd));
+
+    // Remove the peer server from the connector and mappings.
+    peer_fd_to_commands.erase(fd);
+    peer_ip_to_fd.erase(peer_fd_to_ip[fd]);
+    peer_fd_to_ip.erase(fd);
+    close(fd);
+}
+
+/// See distributed.h for documentation.
+void DistributedServer::forward_request_to_protocol_processors(const Request request) {
+    protocol_processors.get(request.protocol.c_str(),
+                            request.protocol.length())(std::move(request));
 }
 
 // Public methods.
 
 /// See distributed.h for documentation.
 void DistributedServer::run() {
-    // Run the servers in the background threads.
-    std::thread udp_server_thread([&]() {
-        log(Status::INFO, "Running UDP server.");
-        this->udp_server.run();
-        log(Status::INFO, "UDP server stopped.");
-    });
-    std::thread tcp_server_thread([&]() {
-        log(Status::INFO, "Running TCP server.");
-        this->tcp_server.run();
-        log(Status::INFO, "TCP server stopped.");
-    });
-
+    // Run the services.
+    run_tcp_server();
+    run_udp_server();
     run_logger_service();
 
     // Send multicast requests to find peer servers.
     multicast_client.open_socket();
     multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
                                   std::to_string(port));
-
-    // Wait for the servers to stop.
-    udp_server_thread.join();
-    tcp_server_thread.join();
 };
 
 /// See distributed.h for documentation.
@@ -207,47 +263,4 @@ StatusOr<bool> DistributedServer::add_handler(const string protocol,
     // Add the protocol to the protocol processors.
     protocol_processors.insert(protocol.c_str(), protocol.length(), handler);
     return StatusOr<bool>(Status::OK, nullptr, false);
-}
-
-// Logging methods.
-
-/// See distributed.h for documentation.
-void DistributedServer::run_logger_service() {
-    // Create a thread for the logger service.
-    logger_service_thread = std::thread([&]() {
-        while (true) {
-            const string sender = "DistributedServerLoggerService";
-
-            // Wait for a log message and then log it depending on the log level.
-            log_queue_semaphore.acquire();
-            std::pair<const Status, const string> log_message = std::move(log_queue.front());
-            log_queue.pop();
-
-            // Log the message.
-            switch (log_message.first) {
-                case Status::OK:
-                    log_ok(log_message.second, sender);
-                    break;
-
-                case Status::ERROR:
-                    log_error(log_message.second, sender);
-                    break;
-
-                case Status::WARNING:
-                    log_warn(log_message.second, sender);
-                    break;
-
-                default:
-                    log_info(log_message.second, sender);
-                    break;
-            }
-        }
-    });
-}
-
-/// See distributed.h for documentation.
-void DistributedServer::log(const Status status, const string message) {
-    // Add the log message to the queue and notify the logger service.
-    log_queue.push(std::make_pair(status, message));
-    log_queue_semaphore.release();
 }

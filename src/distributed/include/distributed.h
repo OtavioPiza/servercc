@@ -52,8 +52,14 @@ class DistributedServer {
     /// The UDP server to handle multicast requests.
     UdpServer udp_server;
 
+    /// The thread to run the UDP server.
+    thread udp_server_thread;
+
     /// The TCP server to handle TCP requests.
     TcpServer tcp_server;
+
+    /// The thread to run the TCP server.
+    thread tcp_server_thread;
 
     /// The connector to handle inter-server requests.
     Connector connector;
@@ -80,7 +86,7 @@ class DistributedServer {
     /// Trie to store the protocol commands supported by the distributed server.
     DefaultTrie<char, std::function<void(const Request)>> protocol_processors;
 
-    // Logging data.
+    // Logging datastructures.
 
     /// The semaphore to protect the log queue.
     binary_semaphore log_queue_semaphore;
@@ -90,6 +96,26 @@ class DistributedServer {
 
     /// The thread to run the logger service.
     thread logger_service_thread;
+
+    // Server services.
+
+    /// Method to run the TCP server.
+    void run_tcp_server();
+
+    /// Method to run the UDP server.
+    void run_udp_server();
+
+    // Logging services.
+
+    /// Waits for a log message to be added to the log queue and prints it indefinitely.
+    void run_logger_service();
+
+    /// Adds a log message to the log queue.
+    ///
+    /// Arguments:
+    ///     status: The status of the log message.
+    ///     message: The log message.
+    void log(const Status status, const string message);
 
     // Handlers.
 
@@ -105,29 +131,17 @@ class DistributedServer {
     ///     request: The request to handle.
     void handle_connect_ack_request(const Request request);
 
-    /// Method to forward the specified request to the protocol processors.
-    ///
-    /// Arguments:
-    ///     request: The request to forward.
-    void forward_request_to_protocol_processors(const Request request);
-
     /// Method to handle a disconnect request.
     ///
     /// Arguments:
     ///     request: The request to handle.
     void handle_peer_disconnect(int fd);
 
-    // Logging methods.
-
-    /// Waits for a log message to be added to the log queue and prints it indefinitely.
-    void run_logger_service();
-
-    /// Adds a log message to the log queue.
+    /// Method to forward the specified request to the protocol processors.
     ///
     /// Arguments:
-    ///     status: The status of the log message.
-    ///     message: The log message.
-    void log(const Status status, const string message);
+    ///     request: The request to forward.
+    void forward_request_to_protocol_processors(const Request request);
 
    public:
     /// Creates a new DistributedServer on the specified interface, group and port.
