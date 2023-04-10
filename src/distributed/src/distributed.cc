@@ -147,7 +147,7 @@ void DistributedServer::handle_connect_request(const Request request) {
     // If the ip address is the same as the interface ip then ignore the
     // request.
     if (ip == interface_ip) {
-        log(Status::WARNING, "Received connect request from self.");
+        log(Status::WARNING, "Ignoring connect from self.");
         close(request.fd);
         return;
     }
