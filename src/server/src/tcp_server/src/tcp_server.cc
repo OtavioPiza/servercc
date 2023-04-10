@@ -99,29 +99,28 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
 
 /// See server.h for documentation.
 [[noreturn]] void TcpServer::run() {
-    int client_socket_fd;            // F.D. for the client socket.
-    struct sockaddr_in client_addr;  // Address of the client.
-    socklen_t client_addr_len = sizeof(struct sockaddr_in);
+    socklen_t addr_len = sizeof(struct sockaddr_in);
+
+    // Create a buffer for the request that is reused for each request.
+    std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
 
     while (true) {
+        Request request;
+
         // Try to accept a connection.
-        if ((client_socket_fd =
-                 accept(server_socket_fd, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
+        if ((request.fd = accept(server_socket_fd, request.addr.get(), &addr_len)) < 0) {
             perror("accept");
             continue;
         }
-        std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
 
         // Try to read from the client and records its address.
-        Request request(client_socket_fd, std::make_shared<struct sockaddr>());
-        int addr_len = sizeof(struct sockaddr);
-        int bytes_read = recvfrom(client_socket_fd, &buffer[0], buffer.size(), 0,
-                                  request.addr.get(), (socklen_t *)&addr_len);
+        int bytes_read = recvfrom(request.fd, &buffer[0], buffer.size(), 0, request.addr.get(),
+                                  &addr_len);
 
         // Check for errors.
         if (bytes_read < 0) {
             perror("recvfrom");
-            close(client_socket_fd);
+            close(request.fd);
             continue;
         }
 
@@ -130,11 +129,13 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
         for (i = 0; i < bytes_read && !isspace(buffer[i]); i++)
             ;
 
-        // Move data to the request.
+        // Copy the protocol and data to the request.
         request.protocol = std::string(buffer.begin(), buffer.begin() + i);
-        request.data = std::string(buffer.begin(), buffer.begin() + bytes_read);
+        request.data = std::string(buffer.begin() + i, buffer.begin() + bytes_read);
 
-        // Look for the processor that handles the provided protocol and send the request to it.
-        protocol_processors.get(&buffer[0], i)(std::move(request));
+        // Process the request. Move is safe because the request is not used after this and
+        // is initialized again in the next iteration.
+        protocol_processors.get(request.protocol.c_str(),
+                                request.protocol.length())(std::move(request));
     }
 }

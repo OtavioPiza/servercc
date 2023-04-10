@@ -127,26 +127,31 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
 
 /// See server.h for documentation.
 [[noreturn]] void UdpServer::run() {
-    while (true) {
-        // Read from the socket.
-        std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
+    socklen_t addr_len = sizeof(struct sockaddr);
 
+    // Create a buffer for the data that is reused for every request.
+    std::vector<char> buffer(SERVERCC_BUFFER_SIZE);
+
+    while (true) {
         // Try to read from the client and store the
         Request request(-1, std::make_shared<struct sockaddr>());
-        int addr_len = sizeof(struct sockaddr);
+
+        // Try to read from the client and store the address.
         int bytes_read = recvfrom(this->server_socket_fd, &buffer[0], buffer.size(), 0,
-                                  request.addr.get(), (socklen_t *)&addr_len);
+                                  request.addr.get(), &addr_len);
 
         // Find the first whitespace character.
         int i;
         for (i = 0; i < bytes_read && !isspace(buffer[i]); i++)
             ;
 
-        // Move data into the request.
+        // Copy data into the request.
         request.protocol = std::string(buffer.begin(), buffer.begin() + i);
         request.data = std::string(buffer.begin(), buffer.begin() + bytes_read);
 
         // Look for the processor that handles the provided protocol and send the request to it.
+        // Move is safe because the request is not used after this and is initialized again in
+        // the next iteration.
         protocol_processors.get(&buffer[0], i)(std::move(request));
     }
 }

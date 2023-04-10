@@ -10,16 +10,19 @@ namespace ostp::servercc {
 /// A request to the server.
 struct Request {
     /// The file descriptor of the client.
-    const int fd;
+    int fd;
 
     /// The internet address of the client.
-    const std::shared_ptr<struct sockaddr> addr;
+    std::shared_ptr<struct sockaddr> addr;
 
     /// The protocol of the request.
     std::string protocol;
 
     /// The request body.
     std::string data;
+
+    /// Constructs an empty request.
+    Request() : addr(std::make_shared<struct sockaddr>()){};
 
     /// Constructs a request with the specified file descriptor and address.
     ///
