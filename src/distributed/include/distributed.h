@@ -5,10 +5,12 @@
 #include <semaphore>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "connector.h"
+#include "message_queue.h"
 #include "multicast_client.h"
 #include "request.h"
 #include "status_or.h"
@@ -25,8 +27,10 @@ using std::binary_semaphore;
 using std::function;
 using std::pair;
 using std::queue;
+using std::shared_ptr;
 using std::string;
 using std::thread;
+using std::unordered_map;
 using std::unordered_set;
 
 namespace ostp::servercc::distributed {
@@ -101,8 +105,17 @@ class DistributedServer {
     ///     message: The message to send.
     ///
     /// Returns:
-    ///     The number of servers that received the message or an error.
+    ///     The ID of the message or an error.
     StatusOr<int> send_message(const string &address, const string &message);
+
+    /// Method to wait for a response to a message.
+    ///
+    /// Arguments:
+    ///     id: The ID of the message to wait for.
+    ///
+    /// Returns:
+    ///     The next segment of the response or an error.
+    StatusOr<string> receive_message(const int id);
 
     /// Adds a log message to the log queue.
     ///
@@ -146,6 +159,9 @@ class DistributedServer {
 
     /// Trie to store the protocol commands supported by the distributed server.
     DefaultTrie<char, function<void(const Request)>> protocol_processors;
+
+    /// Maps a message ID to a semaphore to wait for a response and a queue to store the response.
+    unordered_map<int, shared_ptr<MessageQueue>> message_queues;
 
     // Callbacks.
 
@@ -199,6 +215,18 @@ class DistributedServer {
     /// Arguments:
     ///     request: The request to forward.
     void forward_request_to_protocol_processors(const Request request);
+
+    /// Method to handle an internal request.
+    ///
+    /// Arguments:
+    ///     request: The request to handle.
+    void handle_internal_request(const Request request);
+
+    /// Method to handle an internal response.
+    ///
+    /// Arguments:
+    ///     request: The request to handle.
+    void handle_internal_response(const Request request);
 };
 
 }  // namespace ostp::servercc::distributed

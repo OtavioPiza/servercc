@@ -88,6 +88,7 @@ void Connector::run_client(const string address) {
             Request request(client.get_fd(), client.get_addr());
             request.data = message.result;
             request.protocol = std::string(&message.result[0], i);
+            request.addr = client.get_addr();
 
             // Process the request.
             processors.get(&message.result[0], i)(std::move(request));

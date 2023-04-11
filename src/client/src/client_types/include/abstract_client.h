@@ -42,8 +42,22 @@ class Client {
     ///     port: The server's port.
     Client(const std::string server_address, const uint16_t port)
         : server_address(server_address), port(port), is_socket_open(false), client_fd(-1) {
-        client_addr = std::make_shared<struct sockaddr>();
+        client_addr = std::make_shared<sockaddr>();
     }
+
+    /// Constructs a client with the address, port, and sockaddr.
+    ///
+    /// Arguments:
+    ///     server_address: The server's address.
+    ///     port: The server's port.
+    ///     client_addr: The client's addr.
+    Client(const std::string server_address, const uint16_t port,
+           std::shared_ptr<struct sockaddr> client_addr)
+        : server_address(server_address),
+          port(port),
+          is_socket_open(false),
+          client_fd(-1),
+          client_addr(client_addr) {}
 
    public:
     // Getters

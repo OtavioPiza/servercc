@@ -1,10 +1,14 @@
 #ifndef SERVERCC_TCP_CLIENT_H
 #define SERVERCC_TCP_CLIENT_H
 
+#include <memory>
+
 #include "abstract_client.h"
 #include "status_or.h"
 
 using ostp::libcc::utils::StatusOr;
+using std::shared_ptr;
+using std::string;
 
 namespace ostp::servercc::client {
 
@@ -18,7 +22,7 @@ class TcpClient : virtual public Client {
     /// Arguments:
     ///     server_address: The server's address.
     ///     port: The server's port.
-    TcpClient(const std::string server_address, const uint16_t port);
+    TcpClient(const string server_address, const uint16_t port);
 
     /// Constructs a TCP client from the specified socket.
     ///
@@ -26,7 +30,17 @@ class TcpClient : virtual public Client {
     ///     socket: The socket.
     ///     server_address: The server's address.
     ///     port: The server's port.
-    TcpClient(const int socket, const std::string server_address, const uint16_t port);
+    TcpClient(const int socket, const string server_address, const uint16_t port);
+
+    /// Constructs a TCP client from the specified socket.
+    ///
+    /// Arguments:
+    ///     socket: The socket.
+    ///     server_address: The server's address.
+    ///     port: The server's port.
+    ///     client_addr: The client's addr.
+    TcpClient(const int socket, const string server_address, const uint16_t port,
+              shared_ptr<sockaddr> client_addr);
 
     // Client methods.
 
@@ -37,10 +51,10 @@ class TcpClient : virtual public Client {
     StatusOr<bool> close_socket() override;
 
     /// See abstract_client.h
-    StatusOr<int> send_message(const std::string &message) override;
+    StatusOr<int> send_message(const string &message) override;
 
     /// See abstract_client.h
-    StatusOr<std::string> receive_message() override;
+    StatusOr<string> receive_message() override;
 };
 
 }  // namespace ostp::servercc::client

@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 
 #include <memory>
+#include <random>
 #include <thread>
 
 #include "distributed_protocols.h"
@@ -21,7 +22,10 @@ using ostp::libcc::utils::StatusOr;
 using ostp::servercc::client::MulticastClient;
 using ostp::servercc::client::TcpClient;
 using ostp::servercc::distributed::DistributedServer;
+using ostp::servercc::distributed::MessageQueue;
+using std::binary_semaphore;
 using std::function;
+using std::queue;
 using std::shared_ptr;
 using std::string;
 using std::thread;
@@ -63,6 +67,16 @@ DistributedServer::DistributedServer(const string interface_name, const string i
     // Add the connect_ack request handler to the TCP server.
     tcp_server.set_processor(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT_ACK,
                              [this](const Request request) { this->handle_connect_ack(request); });
+
+    // Add the internal request handler to the connector.
+    connector.add_processor(
+        SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_REQUEST,
+        [this](const Request request) { this->handle_internal_request(request); });
+
+    // Add the internal response handler to the connector.
+    connector.add_processor(
+        SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_RESPONSE,
+        [this](const Request request) { this->handle_internal_response(request); });
 };
 
 // Public methods.
@@ -103,7 +117,48 @@ StatusOr<int> DistributedServer::multicast_message(const string &message) {
 
 /// See distributed.h for documentation.
 StatusOr<int> DistributedServer::send_message(const string &address, const string &message) {
-    return std::move(connector.send_message(address, message));
+    // Generate a new random request id.
+    int id;
+    while (message_queues.contains(id = std::rand()))
+        ;
+
+    // Add the ID to the message queue.
+    message_queues.insert({id, std::make_shared<MessageQueue>()});
+
+    // Wrap the message in a request.
+    const string request =
+        SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_REQUEST " " + std::to_string(id) + "\r\n" + message;
+
+    // Send the request to the peer.
+    const StatusOr result = connector.send_message(address, request);
+    if (result.failed()) {
+        // Remove the ID from the message queue.
+        message_queues.erase(id);
+        return StatusOr(result.status, std::move(result.status_message), -1);
+    }
+
+    // Return the request id.
+    return StatusOr(Status::OK, "Message sent.", id);
+}
+
+/// See distributed.h for documentation.
+StatusOr<string> DistributedServer::receive_message(int id) {
+    // Look for the message queue with the specified ID.
+    auto it = message_queues.find(id);
+    if (it == message_queues.end()) {
+        return StatusOr<string>(Status::ERROR, "Invalid request ID.", "");
+    }
+
+    // Get the message from the queue.
+    const string message = it->second->pop();
+
+    // If the is closed and empty, remove it from the map.
+    if (it->second->is_closed() && it->second->empty()) {
+        message_queues.erase(it);
+    }
+
+    // Return the message.
+    return StatusOr<string>(Status::OK, "Message received.", std::move(message));
 }
 
 /// See distributed.h for documentation.
@@ -201,17 +256,24 @@ void DistributedServer::handle_connect(const Request request) {
     TcpClient peer_server(ip, peer_port);
     if (peer_server.open_socket().failed()) {
         // Close socket and return.
+        log(Status::ERROR, "Failed to open socket for peer server.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
     }
 
     // Send a connect_ack message to the peer server and wait for a connect_ack.
-    peer_server.send_message("connect_ack " + std::to_string(port));
-    StatusOr<string> peer_server_request = peer_server.receive_message();
+    if (peer_server.send_message("connect_ack " + std::to_string(port)).failed()) {
+        // Close socket and return.
+        log(Status::ERROR, "Failed to send connect_ack to peer server.");
+        close(peer_server.get_fd());
+        close(request.fd);
+        return;
+    }
 
     // If the peer server did not send a connect_ack then close the socket and
     // return.
+    StatusOr<string> peer_server_request = peer_server.receive_message();
     if (peer_server_request.failed() || peer_server_request.result != "connect_ack") {
         close(peer_server.get_fd());
         close(request.fd);
@@ -258,7 +320,7 @@ void DistributedServer::handle_connect_ack(const Request request) {
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
 
     // Add the peer server to the connector and mappings.
-    StatusOr address = connector.add_client(TcpClient(request.fd, ip, peer_port));
+    StatusOr address = connector.add_client(TcpClient(request.fd, ip, peer_port, request.addr));
     if (address.failed()) {
         close(request.fd);
         return;
@@ -297,4 +359,127 @@ void DistributedServer::handle_peer_disconnect(const string &ip) {
 void DistributedServer::forward_request_to_protocol_processors(const Request request) {
     protocol_processors.get(request.protocol.c_str(),
                             request.protocol.length())(std::move(request));
+}
+
+/// See distributed.h for documentation.
+void DistributedServer::handle_internal_request(const Request request) {
+    // Get the IP from the request.
+    shared_ptr<struct sockaddr_in> addr =
+        std::reinterpret_pointer_cast<struct sockaddr_in>(request.addr);
+    char ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
+
+    // Get the port from the request.
+    const uint16_t port = ntohs(addr->sin_port);
+
+    // Create an address for the peer server.
+    const string address = string(ip) + ":" + std::to_string(port);
+
+    // Look for the first space and first \r\n in the request.
+    const int space_index = request.data.find(" ");
+    const int newline_index = request.data.find("\r\n");
+    if (space_index == string::npos || newline_index == string::npos) {
+        log(Status::ERROR,
+            "Invalid internal request from '" + address + "'. Request: '" + request.data + "'.");
+        return;
+    }
+
+    // Get the message ID and body.
+    const int message_id = std::stoi(request.data.substr(space_index + 1, newline_index));
+    const string body = request.data.substr(newline_index + 2);
+
+    // Create a pipe that will be used to send the response back to the
+    // requesting server with the message ID header.
+    int pipe_fds[2];
+    if (pipe(pipe_fds) == -1) {
+        log(Status::ERROR, "Failed to create pipe.");
+        return;
+    }
+
+    // Create a new mock request with the fd of the pipe and the content of the
+    // body of the request.
+    Request mock_request;
+    mock_request.fd = pipe_fds[1];
+
+    // Look for first space in the body.
+    int i;
+    for (i = 0; i < body.size() && !isspace(body[i]); i++)
+        ;
+
+    // Get the protocol and data from the body.
+    mock_request.protocol = body.substr(0, i);
+    mock_request.data = std::move(body);
+
+    // Set the address of the mock request to the address of the original
+    mock_request.addr = request.addr;
+
+    // Create a new thread that will forward read the response from the pipe, add the appropriate
+    // message ID header, and send the response back to the requesting server.
+    std::thread([this, pipe_fds, message_id, address]() {
+        // Read the response from the pipe.
+        char buffer[1024];
+
+        // Read the response from the pipe while there is data to read.
+        while (true) {
+            // Read the response from the pipe.
+            int bytes_read = read(pipe_fds[0], buffer, 1024);
+
+            // If there was an error reading from the pipe, log the error and return.
+            if (bytes_read == -1) {
+                log(Status::ERROR, "Failed to read from pipe.");
+                return;
+            }
+
+            // If there is no more data to read, break.
+            if (bytes_read == 0) {
+                break;
+            }
+
+            // Add the message ID header to the response.
+            string response = SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_RESPONSE " " +
+                              std::to_string(message_id) + "\r\n" + string(buffer, bytes_read);
+
+            // Send the response back to the requesting server.
+            if (connector.send_message(address, response).failed()) {
+                log(Status::ERROR, "Failed to send response to server.");
+                return;
+            }
+        }
+
+        // Close the pipe.
+        close(pipe_fds[0]);
+        close(pipe_fds[1]);
+    }).detach();
+
+    // Forward the request to the protocol processors.
+    forward_request_to_protocol_processors(std::move(mock_request));
+}
+
+/// See distributed.h for documentation.
+void DistributedServer::handle_internal_response(const Request request) {
+    // Get the message ID from the request between the first space and the
+    // first \r\n.
+    const int space_index = request.data.find(" ");
+    const int newline_index = request.data.find("\r\n");
+    if (space_index == string::npos || newline_index == string::npos) {
+        log(Status::ERROR, "Received invalid response: " + request.data);
+        return;
+    }
+
+    // Get the message ID.
+    const uint64_t message_id = std::stoi(request.data.substr(space_index + 1, newline_index));
+
+    // Look up the message ID in the message ID map.
+    auto message_queue = message_queues.find(message_id);
+    if (message_queue == message_queues.end()) {
+        log(Status::ERROR,
+            "Received response for unknown message ID: " + std::to_string(message_id));
+        return;
+    }
+
+    // Extract the response from the request after the first \r\n.
+    const string response = request.data.substr(newline_index + 2);
+
+    // Add the response to the message queue.
+    message_queue->second.get()->push(std::move(response));
 }

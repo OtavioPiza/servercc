@@ -7,13 +7,23 @@
 using ostp::libcc::utils::Status;
 using ostp::libcc::utils::StatusOr;
 using ostp::servercc::client::TcpClient;
+using std::shared_ptr;
+using std::string;
 
 /// See tcp_client.h for documentation.
-TcpClient::TcpClient(const std::string server_address, const uint16_t port)
+TcpClient::TcpClient(const string server_address, const uint16_t port)
     : Client(server_address, port){};
 
 /// See tcp_client.h for documentation.
-TcpClient::TcpClient(const int socket, const std::string server_address, const uint16_t port)
+TcpClient::TcpClient(const int socket, const string server_address, const uint16_t port,
+                     shared_ptr<sockaddr> client_addr)
+    : Client(server_address, port, client_addr) {
+    client_fd = socket;
+    is_socket_open = true;
+};
+
+/// See tcp_client.h for documentation.
+TcpClient::TcpClient(const int socket, const string server_address, const uint16_t port)
     : Client(server_address, port) {
     client_fd = socket;
     is_socket_open = true;
@@ -89,7 +99,7 @@ StatusOr<bool> TcpClient::close_socket() {
 }
 
 /// See tcp_client.h for documentation.
-StatusOr<int> TcpClient::send_message(const std::string &message) {
+StatusOr<int> TcpClient::send_message(const string &message) {
     // If the socket is not open, throw an exception.
     if (client_fd == -1) {
         return StatusOr<int>(Status::ERROR, "Socket is not open.", -1);
@@ -108,10 +118,10 @@ StatusOr<int> TcpClient::send_message(const std::string &message) {
 }
 
 /// See tcp_client.h for documentation.
-StatusOr<std::string> TcpClient::receive_message() {
+StatusOr<string> TcpClient::receive_message() {
     // If the socket is not open, return an error.
     if (client_fd == -1) {
-        return StatusOr<std::string>(Status::ERROR, "Socket is not open.", "");
+        return StatusOr<string>(Status::ERROR, "Socket is not open.", "");
     }
 
     // Receive the message.
@@ -120,15 +130,15 @@ StatusOr<std::string> TcpClient::receive_message() {
 
     // If we could not receive the message, return an error.
     if (bytes_received == -1) {
-        return StatusOr<std::string>(Status::ERROR, "Could not receive message.", "");
+        return StatusOr<string>(Status::ERROR, "Could not receive message.", "");
     }
 
     // If we received 0 bytes, the server has closed the connection.
     if (bytes_received == 0) {
-        return StatusOr<std::string>(Status::ERROR, "Server has closed the connection.", "");
+        return StatusOr<string>(Status::ERROR, "Server has closed the connection.", "");
     }
 
     // Return the message.
-    return StatusOr<std::string>(Status::OK, "Message received successfully.",
-                                 std::string(buffer, bytes_received));
+    return StatusOr<string>(Status::OK, "Message received successfully.",
+                            string(buffer, bytes_received));
 }
