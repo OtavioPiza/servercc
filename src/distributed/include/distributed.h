@@ -61,8 +61,10 @@ class DistributedServer {
     ///     group: The group ip address.
     ///     port: The port to use for the distributed server.
     ///     default_handler: The default handler to use for the distributed server.
+    ///     peer_disconnect_callback: The callback to call when a peer disconnects.
     DistributedServer(const string interface_name, const string interface_ip, const string group,
-                      const uint16_t port, function<void(const Request)> default_handler);
+                      const uint16_t port, const function<void(const Request)> default_handler,
+                      const function<void(const string)> peer_disconnect_callback);
 
     // Methods
 
@@ -106,19 +108,6 @@ class DistributedServer {
     StatusOr<bool> send_message(const int fd, const string message);
 
    private:
-    // Protocol handling datastructures.
-
-    /// Trie to store the protocol commands supported by the distributed server.
-    DefaultTrie<char, function<void(const Request)>> protocol_processors;
-
-    // Logging datastructures.
-
-    /// The semaphore to protect the log queue.
-    binary_semaphore log_queue_semaphore;
-
-    /// The queue of log messages.
-    queue<pair<const Status, const string>> log_queue;
-
     // Server components.
 
     /// The TCP server to handle TCP requests.
@@ -133,11 +122,6 @@ class DistributedServer {
     /// The multicast client to send multicast requests.
     MulticastClient multicast_client;
 
-    // Peer server datastructures.
-    unordered_set<string> peers;
-
-    /// The list of peers connected to the distributed server.
-
     // Service threads.
 
     /// The thread to run the TCP server.
@@ -149,7 +133,30 @@ class DistributedServer {
     /// The thread to run the logger service.
     thread logger_service_thread;
 
-    // Server services.
+    // Peer server datastructures.
+
+    /// The list of peers connected to the distributed server.
+    unordered_set<string> peers;
+
+    // Handling datastructures.
+
+    /// Trie to store the protocol commands supported by the distributed server.
+    DefaultTrie<char, function<void(const Request)>> protocol_processors;
+
+    // Callbacks.
+
+    /// The callback to call when a peer disconnects.
+    const function<void(const string)> peer_disconnect_callback;
+
+    // Logging datastructures.
+
+    /// The semaphore to protect the log queue.
+    binary_semaphore log_queue_semaphore;
+
+    /// The queue of log messages.
+    queue<pair<const Status, const string>> log_queue;
+
+    // Server service methods.
 
     /// Method to run the TCP server.
     void run_tcp_server();
@@ -160,7 +167,7 @@ class DistributedServer {
     /// Waits for a log message to be added to the log queue and prints it indefinitely.
     void run_logger_service();
 
-    // Handlers.
+    // Handler methods.
 
     /// Method to handle a connect request.
     ///

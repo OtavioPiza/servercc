@@ -21,17 +21,18 @@ using ostp::libcc::utils::StatusOr;
 using ostp::servercc::client::MulticastClient;
 using ostp::servercc::client::TcpClient;
 using ostp::servercc::distributed::DistributedServer;
+using std::function;
 using std::shared_ptr;
 using std::string;
 using std::thread;
-using std::function;
 
 // Constructors.
 
 /// See distributed.h for documentation.
 DistributedServer::DistributedServer(const string interface_name, const string interface_ip,
                                      const string group, const uint16_t port,
-                                     function<void(const Request)> default_handler)
+                                     const function<void(const Request)> default_handler,
+                                     const function<void(const string)> peer_disconnect_callback)
     : interface_name(interface_name),
       interface_ip(interface_ip),
       group(group),
@@ -51,7 +52,8 @@ DistributedServer::DistributedServer(const string interface_name, const string i
           [this](const string &ip) { this->handle_peer_disconnect(ip); }),
       multicast_client(interface_name, group, port),
       protocol_processors(default_handler),
-      log_queue_semaphore(0) {
+      log_queue_semaphore(0),
+      peer_disconnect_callback(peer_disconnect_callback) {
     // Add the connect request handler to the UDP server.
     udp_server.set_processor(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT,
                              [this](const Request request) { this->handle_connect(request); });
@@ -251,12 +253,15 @@ void DistributedServer::handle_connect_ack(const Request request) {
 /// See distributed.h for documentation.
 void DistributedServer::handle_peer_disconnect(const string &ip) {
     // Remove the peer server from the connector and mappings.
-    log(Status::INFO, "Peer server disconnected. ip: " + ip);
+    log(Status::INFO, "Peer server: '" + ip + "' disconnected.");
 
     // Remove the peer server from the connector and mappings.
     peers.erase(ip);
 
-    // Make callback to protocol processors. TODO
+    // Call the peer disconnect callback.
+    if (peer_disconnect_callback != nullptr) {
+        peer_disconnect_callback(ip);
+    }
 }
 
 /// See distributed.h for documentation.
