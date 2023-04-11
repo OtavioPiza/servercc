@@ -204,10 +204,13 @@ void DistributedServer::handle_connect(const Request request) {
     }
 
     // Add the peer server to the connector and mappings.
-    string address = connector.add_client(peer_server);
-    peers.insert(address);
-
-    // Return.
+    StatusOr address = connector.add_client(peer_server);
+    if (address.failed()) {
+        close(peer_server.get_fd());
+        close(request.fd);
+        return;
+    }
+    peers.insert(address.result);
     return;
 }
 
@@ -232,10 +235,14 @@ void DistributedServer::handle_connect_ack(const Request request) {
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
 
     // Add the peer server to the connector and mappings.
-    string address = connector.add_client(TcpClient(request.fd, ip, peer_port));
+    StatusOr address = connector.add_client(TcpClient(request.fd, ip, peer_port));
+    if (address.failed()) {
+        close(request.fd);
+        return;
+    }
 
     // Send connect_ack to the peer server.
-    connector.send_message(address, "connect_ack");
+    connector.send_message(address.result, "connect_ack");
 
     // Return.
     return;

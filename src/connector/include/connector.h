@@ -21,23 +21,6 @@ namespace ostp::servercc::connector {
 
 /// A TCP connection manager that.
 class Connector {
-   private:
-    /// Default trie for processing requests.
-    DefaultTrie<char, function<void(const Request)>> processors;
-
-    /// Handler for when a client disconnects.
-    const function<void(const string)> disconnect_handler;
-
-    /// A map of the current TCP clients identified by their socket file
-    /// descriptor.
-    unordered_map<string, TcpClient> clients;
-
-    /// Runs the specified client in a thread.
-    ///
-    /// Arguments:
-    ///     client: The client to run.
-    void run_client(TcpClient &client);
-
    public:
     // Constructors
 
@@ -66,15 +49,35 @@ class Connector {
     /// Arguments:
     ///     client: The client to add.
     /// Returns:
-    ///     The address:port of the client.
-    string add_client(TcpClient client);
+    ///     The address of the client if successful, otherwise an error.
+    StatusOr<string> add_client(TcpClient client);
 
     /// Send a message through the specified client.
     ///
     /// Arguments:
-    ///     fd: The file descriptor of the client.
+    ///     address: The address of the client to send the message to.
     ///     message: The message to send.
+    ///
+    /// Returns:
+    ///     The number of bytes sent if successful, otherwise an error.
     StatusOr<int> send_message(const string& address, const string& message);
+
+   private:
+    /// Default trie for processing requests.
+    DefaultTrie<char, function<void(const Request)>> processors;
+
+    /// Handler for when a client disconnects.
+    const function<void(const string)> disconnect_handler;
+
+    /// A map of the current TCP clients identified by their socket file
+    /// descriptor.
+    unordered_map<string, TcpClient> clients;
+
+    /// Runs the specified client in a thread.
+    ///
+    /// Arguments:
+    ///     client: The client to run.
+    void run_client(const string address);
 };
 
 }  // namespace ostp::servercc::connector
