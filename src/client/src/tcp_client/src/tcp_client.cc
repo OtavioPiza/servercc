@@ -77,8 +77,11 @@ StatusOr<bool> TcpClient::open_socket() {
         return StatusOr<bool>(Status::ERROR, "Could not connect to server.", false);
     }
 
-    // Mark the socket as open and return.
+    // Mark the socket as open, set the client address.
     is_socket_open = true;
+    memcpy(client_addr.get(), server_info->ai_addr, server_info->ai_addrlen);
+
+    // Return.
     return StatusOr<bool>(Status::OK, "Socket opened successfully.", true);
 }
 
