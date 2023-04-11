@@ -61,6 +61,7 @@ class DistributedServer {
     ///     group: The group ip address.
     ///     port: The port to use for the distributed server.
     ///     default_handler: The default handler to use for the distributed server.
+    ///     peer_connect_callback: The callback to call when a peer connects.
     ///     peer_disconnect_callback: The callback to call when a peer disconnects.
     DistributedServer(const string interface_name, const string interface_ip, const string group,
                       const uint16_t port, const function<void(const Request)> default_handler,
