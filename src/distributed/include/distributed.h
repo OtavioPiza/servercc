@@ -64,6 +64,7 @@ class DistributedServer {
     ///     peer_disconnect_callback: The callback to call when a peer disconnects.
     DistributedServer(const string interface_name, const string interface_ip, const string group,
                       const uint16_t port, const function<void(const Request)> default_handler,
+                      const function<void(const string)> peer_connect_callback,
                       const function<void(const string)> peer_disconnect_callback);
 
     // Methods
@@ -146,6 +147,9 @@ class DistributedServer {
     DefaultTrie<char, function<void(const Request)>> protocol_processors;
 
     // Callbacks.
+
+    /// The callback to call when a peer connects.
+    const function<void(const string)> peer_connect_callback;
 
     /// The callback to call when a peer disconnects.
     const function<void(const string)> peer_disconnect_callback;

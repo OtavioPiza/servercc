@@ -32,6 +32,7 @@ using std::thread;
 DistributedServer::DistributedServer(const string interface_name, const string interface_ip,
                                      const string group, const uint16_t port,
                                      const function<void(const Request)> default_handler,
+                                     const function<void(const string)> peer_connect_callback,
                                      const function<void(const string)> peer_disconnect_callback)
     : interface_name(interface_name),
       interface_ip(interface_ip),
@@ -53,6 +54,7 @@ DistributedServer::DistributedServer(const string interface_name, const string i
       multicast_client(interface_name, group, port),
       protocol_processors(default_handler),
       log_queue_semaphore(0),
+      peer_connect_callback(peer_connect_callback),
       peer_disconnect_callback(peer_disconnect_callback) {
     // Add the connect request handler to the UDP server.
     udp_server.set_processor(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT,
@@ -224,6 +226,14 @@ void DistributedServer::handle_connect(const Request request) {
         return;
     }
     peers.insert(address.result);
+
+    // Call the peer connect callback.
+    if (peer_connect_callback != nullptr) {
+        peer_connect_callback(std::move(address.result));
+    }
+
+    // Return and close the socket.
+    close(request.fd);
     return;
 }
 
@@ -255,9 +265,17 @@ void DistributedServer::handle_connect_ack(const Request request) {
     }
 
     // Send connect_ack to the peer server.
-    connector.send_message(address.result, "connect_ack");
+    if (connector.send_message(address.result, "connect_ack").failed()) {
+        close(request.fd);
+        return;
+    }
 
-    // Return.
+    // Call the peer connect callback.
+    if (peer_connect_callback != nullptr) {
+        peer_connect_callback(std::move(address.result));
+    }
+
+    // Return without closing the socket as it is now owned by the connector.
     return;
 }
 
