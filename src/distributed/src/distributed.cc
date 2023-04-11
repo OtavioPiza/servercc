@@ -443,8 +443,10 @@ void DistributedServer::handle_internal_request(const Request request) {
                               std::to_string(message_id) + "\r\n" + string(buffer, bytes_read);
 
             // Send the response back to the requesting server.
-            if (connector.send_message(address, response).failed()) {
-                log(Status::ERROR, "Failed to send response to server.");
+            auto send_res = connector.send_message(address, response);
+            if (send_res.failed()) {
+                log(Status::ERROR,
+                    "Failed to send response to server. " + std::string(send_res.status_message));
                 return;
             }
         }
