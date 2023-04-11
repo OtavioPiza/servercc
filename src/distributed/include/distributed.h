@@ -76,9 +76,31 @@ class DistributedServer {
     /// Arguments:
     ///     protocol: The protocol to add a handler for.
     ///     handler: The handler to add.
-    StatusOr<void> add_handler(const string protocol, function<void(const Request)> handler);
+    ///
+    /// Returns:
+    ///     A StatusOr<void> with the status of the operation.
+    StatusOr<void> add_handler(const string &protocol, function<void(const Request)> handler);
 
     // Server utilities.
+
+    /// Method to send a multicast message to all the servers.
+    ///
+    /// Arguments:
+    ///     message: The message to send.
+    ///
+    /// Returns:
+    ///     The number of servers that received the message or an error.
+    StatusOr<int> multicast_message(const string &message);
+
+    /// Method to send a message to a specific server.
+    ///
+    /// Arguments:
+    ///     ip: The ip address of the server to send the message to.
+    ///     message: The message to send.
+    ///
+    /// Returns:
+    ///     The number of servers that received the message or an error.
+    StatusOr<int> send_message(const string &address, const string &message);
 
     /// Adds a log message to the log queue.
     ///
@@ -86,26 +108,6 @@ class DistributedServer {
     ///     status: The status of the log message.
     ///     message: The log message.
     void log(const Status status, const string message);
-
-    /// Method to send a multicast message to all the servers.
-    ///
-    /// Arguments:
-    ///     message: The message to send.
-    StatusOr<bool> multicast_message(const string message);
-
-    /// Method to send a message to a specific server.
-    ///
-    /// Arguments:
-    ///     ip: The ip address of the server to send the message to.
-    ///     message: The message to send.
-    StatusOr<bool> send_message(const string ip, const string message);
-
-    /// Method to send a message to a specific server.
-    ///
-    /// Arguments:
-    ///     fd: The file descriptor of the server to send the message to.
-    ///     message: The message to send.
-    StatusOr<bool> send_message(const int fd, const string message);
 
    private:
     // Server components.

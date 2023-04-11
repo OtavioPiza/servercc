@@ -79,8 +79,8 @@ void DistributedServer::run() {
 };
 
 /// See distributed.h for documentation.
-StatusOr<void> DistributedServer::add_handler(const string protocol,
-                                              const std::function<void(const Request)> handler) {
+StatusOr<void> DistributedServer::add_handler(const string &protocol,
+                                              const function<void(const Request)> handler) {
     // Check if the protocol is already registered.
     if (protocol_processors.contains(protocol.c_str(), protocol.length())) {
         return StatusOr<void>(Status::ERROR, "Protocol already registered.");
@@ -94,9 +94,20 @@ StatusOr<void> DistributedServer::add_handler(const string protocol,
 // Utility methods.
 
 /// See distributed.h for documentation.
+StatusOr<int> DistributedServer::multicast_message(const string &message) {
+    // Send the message to the multicast group.
+    return std::move(multicast_client.send_message(message));
+}
+
+/// See distributed.h for documentation.
+StatusOr<int> DistributedServer::send_message(const string &address, const string &message) {
+    return std::move(connector.send_message(address, message));
+}
+
+/// See distributed.h for documentation.
 void DistributedServer::log(const Status status, const string message) {
     // Add the log message to the queue and notify the logger service.
-    log_queue.push(std::make_pair(status, message));
+    log_queue.push(std::make_pair(status, std::move(message)));
     log_queue_semaphore.release();
 }
 
