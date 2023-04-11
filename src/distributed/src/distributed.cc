@@ -86,7 +86,7 @@ StatusOr<void> DistributedServer::add_handler(const string protocol,
 
     // Add the protocol to the protocol processors.
     protocol_processors.insert(protocol.c_str(), protocol.length(), handler);
-    return StatusOr<void>(Status::OK, nullptr);
+    return StatusOr<void>(Status::OK, "Protocol registered.");
 }
 
 // Utility methods.
