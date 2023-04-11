@@ -235,14 +235,14 @@ void DistributedServer::handle_connect(const Request request) {
          space_index < request.data.length() && !isspace(request.data[space_index]); space_index++)
         ;
 
-    // Get the port from the connect request.
-    const uint16_t peer_port = std::stoi(request.data.substr(space_index + 1));
-
-    // Get the ip from the connect request.
+    // Get the IP address from the connect request address.
     shared_ptr<struct sockaddr_in> addr =
         std::reinterpret_pointer_cast<struct sockaddr_in>(request.addr);
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
+
+    // Get the port from the connect request data.
+    const uint16_t peer_port = std::stoi(request.data.substr(space_index + 1));
 
     // If the ip address is the same as the interface ip then ignore the
     // request.
@@ -256,16 +256,18 @@ void DistributedServer::handle_connect(const Request request) {
     TcpClient peer_server(ip, peer_port);
     if (peer_server.open_socket().failed()) {
         // Close socket and return.
-        log(Status::ERROR, "Failed to open socket for peer server.");
+        log(Status::ERROR, "Failed to open socket for peer server'" + string(ip) + ":" +
+                               std::to_string(peer_port) + "'.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
     }
 
     // Send a connect_ack message to the peer server and wait for a connect_ack.
-    if (peer_server.send_message("connect_ack " + std::to_string(port)).failed()) {
+    if (peer_server.send_message("connect_ack").failed()) {
         // Close socket and return.
-        log(Status::ERROR, "Failed to send connect_ack to peer server.");
+        log(Status::ERROR, "Failed to send connect_ack to peer server '" + string(ip) + ":" +
+                               std::to_string(peer_port) + "'.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
@@ -275,6 +277,8 @@ void DistributedServer::handle_connect(const Request request) {
     // return.
     StatusOr<string> peer_server_request = peer_server.receive_message();
     if (peer_server_request.failed() || peer_server_request.result != "connect_ack") {
+        log(Status::ERROR, "Failed to receive connect_ack from peer server '" + string(ip) + ":" +
+                               std::to_string(peer_port) + "'.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
@@ -283,6 +287,8 @@ void DistributedServer::handle_connect(const Request request) {
     // Add the peer server to the connector and mappings.
     StatusOr address = connector.add_client(peer_server);
     if (address.failed()) {
+        log(Status::ERROR, "Failed to add peer server '" + string(ip) + ":" +
+                               std::to_string(peer_port) + "' to connector.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
@@ -303,31 +309,28 @@ void DistributedServer::handle_connect(const Request request) {
 void DistributedServer::handle_connect_ack(const Request request) {
     log(Status::INFO, "Received connect_ack request.");
 
-    // Find the port of the peer server that sent the request by looking after
-    // the first space in the request.
-    int space_index;
-    for (space_index = 0; space_index < request.data.size() && !isspace(request.data[space_index]);
-         space_index++)
-        ;
-
-    // Get the port from the connect request.
-    const uint16_t peer_port = std::stoi(request.data.substr(space_index + 1));
-
     // Get the ip from the connect request.
     shared_ptr<struct sockaddr_in> addr =
         std::reinterpret_pointer_cast<struct sockaddr_in>(request.addr);
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
 
+    // Get the port of the peer server that sent the request.
+    const uint16_t peer_port = ntohs(addr->sin_port);
+
     // Add the peer server to the connector and mappings.
     StatusOr address = connector.add_client(TcpClient(request.fd, ip, peer_port, request.addr));
     if (address.failed()) {
+        log(Status::ERROR, "Failed to add peer server '" + string(ip) + ":" +
+                               std::to_string(peer_port) + "' to connector.");
         close(request.fd);
         return;
     }
 
     // Send connect_ack to the peer server.
     if (connector.send_message(address.result, "connect_ack").failed()) {
+        log(Status::ERROR, "Failed to send connect_ack to peer server '" + string(ip) + ":" +
+                               std::to_string(peer_port) + "'.");
         close(request.fd);
         return;
     }
