@@ -26,7 +26,9 @@ string MessageQueue::pop() {
     }
 
     // Wait for a message to be available.
+    waiting_threads++;
     semaphore.acquire();
+    waiting_threads--;
 
     // If the queue was closed while waiting and there are no more messages, return an empty string.
     if (closed && messages.empty()) {
@@ -44,8 +46,9 @@ void MessageQueue::close() {
     closed = true;
 
     // Release all waiting threads.
-    while (semaphore.try_acquire())
-        ;
+    for (int i = 0; i < waiting_threads; i++) {
+        semaphore.release();
+    }
 }
 
 /// See message_queue.h for documentation.

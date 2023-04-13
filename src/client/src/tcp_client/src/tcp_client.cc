@@ -108,7 +108,7 @@ StatusOr<int> TcpClient::send_message(const string &message) {
         return StatusOr<int>(Status::ERROR, "Socket is not open.", -1);
     }
 
-    // Send the message.
+    // Send the message immediately.
     int bytes_sent = send(client_fd, message.c_str(), message.length(), 0);
 
     // If we could not send the message, throw an exception.

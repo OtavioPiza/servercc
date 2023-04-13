@@ -227,6 +227,12 @@ class DistributedServer {
     /// Arguments:
     ///     request: The request to handle.
     void handle_internal_response(const Request request);
+
+    /// Method to handle an internal response end.
+    ///
+    /// Arguments:
+    ///     request: The request to handle.
+    void handle_internal_response_end(const Request request);
 };
 
 }  // namespace ostp::servercc::distributed

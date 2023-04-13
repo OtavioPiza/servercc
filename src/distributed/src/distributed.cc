@@ -77,6 +77,11 @@ DistributedServer::DistributedServer(const string interface_name, const string i
     connector.add_processor(
         SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_RESPONSE,
         [this](const Request request) { this->handle_internal_response(request); });
+
+    // Add the internal response end handler to the connector.
+    connector.add_processor(
+        SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_RESPONSE_END,
+        [this](const Request request) { this->handle_internal_response_end(request); });
 };
 
 // Public methods.
@@ -430,7 +435,7 @@ void DistributedServer::handle_internal_request(const Request request) {
             // If there was an error reading from the pipe, log the error and return.
             if (bytes_read == -1) {
                 log(Status::ERROR, "Failed to read from pipe.");
-                return;
+                break;
             }
 
             // If there is no more data to read, break.
@@ -447,8 +452,17 @@ void DistributedServer::handle_internal_request(const Request request) {
             if (send_res.failed()) {
                 log(Status::ERROR,
                     "Failed to send response to server. " + std::string(send_res.status_message));
-                return;
+                break;
             }
+        }
+
+        // Send a response end message to the requesting server.
+        auto send_res = connector.send_message(
+            address,
+            SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_RESPONSE_END " " + std::to_string(message_id));
+        if (send_res.failed()) {
+            log(Status::ERROR,
+                "Failed to send response end to server. " + std::string(send_res.status_message));
         }
 
         // Close the pipe.
@@ -487,4 +501,28 @@ void DistributedServer::handle_internal_response(const Request request) {
 
     // Add the response to the message queue.
     message_queue->second.get()->push(std::move(response));
+}
+
+/// See distributed.h for documentation.
+void DistributedServer::handle_internal_response_end(const Request response) {
+    // Get the message ID after the first space.
+    const int space_index = response.data.find(" ");
+    if (space_index == string::npos) {
+        log(Status::ERROR, "Received invalid response end: " + response.data);
+        return;
+    }
+
+    // Get the message ID.
+    const uint64_t message_id = std::stoi(response.data.substr(space_index + 1));
+
+    // Look up the message ID in the message ID map.
+    auto message_queue = message_queues.find(message_id);
+    if (message_queue == message_queues.end()) {
+        log(Status::ERROR,
+            "Received response end for unknown message ID: " + std::to_string(message_id));
+        return;
+    }
+
+    // Set the message queue to done.
+    message_queue->second.get()->close();
 }

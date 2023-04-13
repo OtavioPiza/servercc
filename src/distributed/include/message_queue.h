@@ -1,10 +1,12 @@
 #ifndef SERVERCC_DISTRIBUTED_MESSAGE_QUEUE_H
 #define SERVERCC_DISTRIBUTED_MESSAGE_QUEUE_H
 
+#include <atomic>
 #include <queue>
 #include <semaphore>
 #include <string>
 
+using std::atomic_int;
 using std::binary_semaphore;
 using std::queue;
 using std::string;
@@ -39,6 +41,9 @@ class MessageQueue {
 
     /// The semaphore used to synchronize the queue.
     binary_semaphore semaphore;
+
+    /// The number of threads waiting on the semaphore.
+    atomic_int waiting_threads;
 
     /// Whether the queue is closed.
     bool closed;
