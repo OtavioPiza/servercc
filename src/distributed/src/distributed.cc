@@ -163,7 +163,11 @@ StatusOr<string> DistributedServer::receive_message(int id) {
     }
 
     // Return the message.
-    return StatusOr<string>(Status::OK, "Message received.", std::move(message));
+    if (message.empty()) {
+        return StatusOr<string>(Status::ERROR, "Message queue closed.", "");
+    } else {
+        return StatusOr<string>(Status::OK, "Message received.", std::move(message));
+    }
 }
 
 /// See distributed.h for documentation.
