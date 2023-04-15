@@ -3,12 +3,14 @@
 #include <netdb.h>
 
 #include <cstring>
+#include <vector>
 
 using ostp::libcc::utils::Status;
 using ostp::libcc::utils::StatusOr;
 using ostp::servercc::client::TcpClient;
 using std::shared_ptr;
 using std::string;
+using std::vector;
 
 /// See tcp_client.h for documentation.
 TcpClient::TcpClient(const string server_address, const uint16_t port)
@@ -108,8 +110,17 @@ StatusOr<int> TcpClient::send_message(const string &message) {
         return StatusOr<int>(Status::ERROR, "Socket is not open.", -1);
     }
 
+    // Write the message length to the first 4 bytes of the message.
+    uint32_t message_length = htonl(message.length());
+    int bytes_sent = send(client_fd, &message_length, 4, 0);
+
+    // If we could not send the message, throw an exception.
+    if (bytes_sent == -1) {
+        return StatusOr<int>(Status::ERROR, "Could not send message.", -1);
+    }
+
     // Send the message immediately.
-    int bytes_sent = send(client_fd, message.c_str(), message.length(), 0);
+    bytes_sent = send(client_fd, message.c_str(), message.length(), 0);
 
     // If we could not send the message, throw an exception.
     if (bytes_sent == -1) {
@@ -127,9 +138,26 @@ StatusOr<string> TcpClient::receive_message() {
         return StatusOr<string>(Status::ERROR, "Socket is not open.", "");
     }
 
-    // Receive the message.
-    char buffer[1024];
-    int bytes_received = recv(client_fd, buffer, 1024, 0);
+    // Receive the first 4 bytes of the message and read it as a message length.
+    uint32_t message_length = 0;
+    int bytes_received = recv(client_fd, &message_length, 4, 0);
+
+    // If we could not receive the message, return an error.
+    if (bytes_received == -1) {
+        return StatusOr<string>(Status::ERROR, "Could not receive message.", "");
+    }
+
+    // If we received 0 bytes, the server has closed the connection.
+    if (bytes_received == 0) {
+        return StatusOr<string>(Status::ERROR, "Server has closed the connection.", "");
+    }
+
+    // Read the message length.
+    message_length = ntohl(message_length);
+
+    // Receive the message of the given length.
+    std::vector<char> buffer(message_length);
+    bytes_received = recv(client_fd, buffer.data(), message_length, 0);
 
     // If we could not receive the message, return an error.
     if (bytes_received == -1) {
@@ -143,5 +171,5 @@ StatusOr<string> TcpClient::receive_message() {
 
     // Return the message.
     return StatusOr<string>(Status::OK, "Message received successfully.",
-                            string(buffer, bytes_received));
+                            string(buffer.begin(), buffer.end()));
 }
