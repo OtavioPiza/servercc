@@ -13,6 +13,7 @@
 #include "status_or.h"
 #include "tcp_client.h"
 
+using ostp::libcc::data_structures::MessageQueue;
 using ostp::libcc::utils::log_error;
 using ostp::libcc::utils::log_info;
 using ostp::libcc::utils::log_ok;
@@ -22,7 +23,6 @@ using ostp::libcc::utils::StatusOr;
 using ostp::servercc::client::MulticastClient;
 using ostp::servercc::client::TcpClient;
 using ostp::servercc::distributed::DistributedServer;
-using ostp::servercc::distributed::MessageQueue;
 using std::binary_semaphore;
 using std::function;
 using std::queue;
@@ -155,19 +155,20 @@ StatusOr<string> DistributedServer::receive_message(int id) {
     }
 
     // Get the message from the queue.
-    const string message = it->second->pop();
+    StatusOr<string> message_res = it->second->pop();
 
     // If the is closed and empty, remove it from the map.
     if (it->second->is_closed() && it->second->empty()) {
         message_queues.erase(it);
     }
 
-    // Return the message.
-    if (message.empty()) {
-        return StatusOr<string>(Status::ERROR, "Message queue closed.", "");
-    } else {
-        return StatusOr<string>(Status::OK, "Message received.", std::move(message));
+    // If failed, return the error.
+    if (!message_res.ok()) {
+        return std::move(message_res);
     }
+
+    // Get the message.
+    return StatusOr<string>(Status::OK, "Message received.", std::move(message_res.result));
 }
 
 /// See distributed.h for documentation.

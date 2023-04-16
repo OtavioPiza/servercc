@@ -18,6 +18,7 @@
 #include "udp_server.h"
 
 using ostp::libcc::utils::Status;
+using ostp::libcc::data_structures::MessageQueue;
 using ostp::servercc::Request;
 using ostp::servercc::client::MulticastClient;
 using ostp::servercc::connector::Connector;

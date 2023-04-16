@@ -5,7 +5,6 @@ target_sources(
     distributed 
     PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/src/distributed.cc
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/message_queue.cc
 )
 
 target_include_directories(
