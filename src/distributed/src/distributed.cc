@@ -162,13 +162,8 @@ StatusOr<string> DistributedServer::receive_message(int id) {
         message_queues.erase(it);
     }
 
-    // If failed, return the error.
-    if (!message_res.ok()) {
-        return std::move(message_res);
-    }
-
-    // Get the message.
-    return StatusOr<string>(Status::OK, "Message received.", std::move(message_res.result));
+    // Return the message.
+    return std::move(message_res);
 }
 
 /// See distributed.h for documentation.
