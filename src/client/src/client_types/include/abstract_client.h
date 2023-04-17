@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <cstring>
 
 #include "status_or.h"
 
@@ -31,7 +32,7 @@ class Client {
     bool is_socket_open;
 
     /// The clients addr.
-    std::shared_ptr<struct sockaddr> client_addr;
+    sockaddr client_addr;
 
     // Constructors
 
@@ -42,7 +43,7 @@ class Client {
     ///     port: The server's port.
     Client(const std::string server_address, const uint16_t port)
         : server_address(server_address), port(port), is_socket_open(false), client_fd(-1) {
-        client_addr = std::make_shared<sockaddr>();
+        memset(&client_addr, 0, sizeof(client_addr));
     }
 
     /// Constructs a client with the address, port, and sockaddr.
@@ -51,8 +52,7 @@ class Client {
     ///     server_address: The server's address.
     ///     port: The server's port.
     ///     client_addr: The client's addr.
-    Client(const std::string server_address, const uint16_t port,
-           std::shared_ptr<struct sockaddr> client_addr)
+    Client(const std::string server_address, const uint16_t port, sockaddr client_addr)
         : server_address(server_address),
           port(port),
           is_socket_open(false),
@@ -90,7 +90,7 @@ class Client {
     ///
     /// Returns:
     ///     A shared pointer to the client's addr.
-    virtual std::shared_ptr<struct sockaddr> get_addr() { return client_addr; }
+    virtual sockaddr get_addr() { return client_addr; }
 
     // Virtual Methods
 

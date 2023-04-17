@@ -40,7 +40,7 @@ class TcpClient : virtual public Client {
     ///     port: The server's port.
     ///     client_addr: The client's addr.
     TcpClient(const int socket, const string server_address, const uint16_t port,
-              shared_ptr<sockaddr> client_addr);
+              sockaddr client_addr);
 
     // Client methods.
 

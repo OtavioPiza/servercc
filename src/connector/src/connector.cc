@@ -1,5 +1,7 @@
 #include "connector.h"
 
+#include <cstring>
+
 using ostp::libcc::utils::Status;
 using ostp::libcc::utils::StatusOr;
 using ostp::servercc::Request;
@@ -85,10 +87,11 @@ void Connector::run_client(const string address) {
                 ;
 
             // Create the connector request.
-            Request request(client.get_fd(), client.get_addr());
+            Request request;
+            request.addr = client.get_addr();
+            request.fd = client.get_fd();
             request.data = message.result;
             request.protocol = std::string(&message.result[0], i);
-            request.addr = client.get_addr();
 
             // Process the request.
             processors.get(&message.result[0], i)(std::move(request));

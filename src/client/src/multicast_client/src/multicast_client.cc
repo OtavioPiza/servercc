@@ -45,7 +45,7 @@ StatusOr<bool> MulticastClient::open_socket() {
     }
 
     // Set the address.
-    struct sockaddr_in *client_address = reinterpret_cast<struct sockaddr_in *>(client_addr.get());
+    sockaddr_in *client_address = (sockaddr_in *)&client_addr;
     client_address->sin_family = AF_INET;
     client_address->sin_addr.s_addr = inet_addr(get_address().c_str());
     client_address->sin_port = htons(get_port());
@@ -88,8 +88,8 @@ StatusOr<int> MulticastClient::send_message(const std::string &message) {
     }
 
     // Send the message.
-    int bytes_sent = sendto(client_fd, message.c_str(), message.size(), 0, client_addr.get(),
-                            sizeof(client_addr));
+    int bytes_sent =
+        sendto(client_fd, message.c_str(), message.size(), 0, &client_addr, sizeof(client_addr));
     if (bytes_sent < 0) {
         perror("sendto");
         return StatusOr<int>(Status::ERROR, "Failed to send message.", 0);

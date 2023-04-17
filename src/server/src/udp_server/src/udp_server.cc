@@ -134,11 +134,13 @@ UdpServer::~UdpServer() { close(this->server_socket_fd); }
 
     while (true) {
         // Try to read from the client and store the
-        Request request(-1, std::make_shared<struct sockaddr>());
+        Request request;
+        request.fd = -1;
+        memset(&request.addr, 0, sizeof(struct sockaddr));
 
         // Try to read from the client and store the address.
         int bytes_read = recvfrom(this->server_socket_fd, &buffer[0], buffer.size(), 0,
-                                  request.addr.get(), &addr_len);
+                                  &request.addr, &addr_len);
 
         // Find the first whitespace character.
         int i;

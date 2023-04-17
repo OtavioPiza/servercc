@@ -5,6 +5,8 @@
 
 #include <memory>
 
+using std::string;
+
 namespace ostp::servercc {
 
 /// A request to the server.
@@ -13,23 +15,23 @@ struct Request {
     int fd;
 
     /// The internet address of the client.
-    std::shared_ptr<struct sockaddr> addr;
+    sockaddr addr;
 
     /// The protocol of the request.
-    std::string protocol;
+    string protocol;
 
     /// The request body.
-    std::string data;
+    string data;
 
     /// Constructs an empty request.
-    Request() : addr(std::make_shared<struct sockaddr>()){};
+    Request(){};
 
     /// Constructs a request with the specified file descriptor and address.
     ///
     /// Arguments:
     ///     fd: The file descriptor of the client.
     ///     addr: The internet address of the client.
-    Request(const int fd, const std::shared_ptr<struct sockaddr> addr) : fd(fd), addr(addr){};
+    Request(const int fd, const sockaddr addr) : fd(fd), addr(addr){};
 };
 
 }  // namespace ostp::servercc

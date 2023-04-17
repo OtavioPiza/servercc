@@ -241,10 +241,8 @@ void DistributedServer::handle_connect(const Request request) {
         ;
 
     // Get the IP address from the connect request address.
-    shared_ptr<struct sockaddr_in> addr =
-        std::reinterpret_pointer_cast<struct sockaddr_in>(request.addr);
     char ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &((sockaddr_in *)&request.addr)->sin_addr, ip, INET_ADDRSTRLEN);
 
     // Get the port from the connect request data.
     const uint16_t peer_port = std::stoi(request.data.substr(space_index + 1));
@@ -314,14 +312,11 @@ void DistributedServer::handle_connect(const Request request) {
 void DistributedServer::handle_connect_ack(const Request request) {
     log(Status::INFO, "Received connect_ack request.");
 
-    // Get the ip from the connect request.
-    shared_ptr<struct sockaddr_in> addr =
-        std::reinterpret_pointer_cast<struct sockaddr_in>(request.addr);
+    // Get the port and ip from the connect request.
+    sockaddr_in *addr = (sockaddr_in *)&request.addr;
+    uint16_t peer_port = ntohs(addr->sin_port);
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
-
-    // Get the port of the peer server that sent the request.
-    const uint16_t peer_port = ntohs(addr->sin_port);
 
     // Add the peer server to the connector and mappings.
     StatusOr address = connector.add_client(TcpClient(request.fd, ip, peer_port, request.addr));
@@ -371,14 +366,11 @@ void DistributedServer::forward_request_to_protocol_processors(const Request req
 
 /// See distributed.h for documentation.
 void DistributedServer::handle_internal_request(const Request request) {
-    // Get the IP from the request.
-    shared_ptr<struct sockaddr_in> addr =
-        std::reinterpret_pointer_cast<struct sockaddr_in>(request.addr);
+    // Get the port and ip from the connect request.
+    sockaddr_in *addr = (sockaddr_in *)&request.addr;
+    uint16_t peer_port = ntohs(addr->sin_port);
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
-
-    // Get the port from the request.
-    const uint16_t port = ntohs(addr->sin_port);
 
     // Create an address for the peer server.
     const string address = string(ip) + ":" + std::to_string(port);

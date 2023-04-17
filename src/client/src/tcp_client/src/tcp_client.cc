@@ -18,7 +18,7 @@ TcpClient::TcpClient(const string server_address, const uint16_t port)
 
 /// See tcp_client.h for documentation.
 TcpClient::TcpClient(const int socket, const string server_address, const uint16_t port,
-                     shared_ptr<sockaddr> client_addr)
+                     sockaddr client_addr)
     : Client(server_address, port, client_addr) {
     client_fd = socket;
     is_socket_open = true;
@@ -81,7 +81,7 @@ StatusOr<bool> TcpClient::open_socket() {
 
     // Mark the socket as open, set the client address.
     is_socket_open = true;
-    memcpy(client_addr.get(), server_info->ai_addr, server_info->ai_addrlen);
+    memcpy(&client_addr, server_info->ai_addr, server_info->ai_addrlen);
 
     // Return.
     return StatusOr<bool>(Status::OK, "Socket opened successfully.", true);

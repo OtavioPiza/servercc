@@ -158,7 +158,7 @@ TcpServer::~TcpServer() { close(this->server_socket_fd); }
             ;
 
         // Create a request from the buffer.
-        Request request(client_socket_fd, std::make_shared<sockaddr>(client_addr));
+        Request request(client_socket_fd, client_addr);
         request.protocol = std::string(buffer.begin(), buffer.begin() + i);
         request.data = std::string(buffer.begin(), buffer.end());
 
