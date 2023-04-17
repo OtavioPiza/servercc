@@ -28,19 +28,27 @@ target_link_libraries(
         types
 )
 
-# If a user has not specified a directory for libcc, then clone it from GitHub into lib/libcc.
-if (NOT DEFINED LIBCC_DIR)
-    set(LIBCC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcc)
-    if (NOT EXISTS ${LIBCC_DIR})
-        message(STATUS "Cloning libcc into ${LIBCC_DIR}")
-        execute_process(COMMAND git clone https://github.com/OtavioPiza/libcc.git ${LIBCC_DIR})
+# Setup libcc if it is not already setup.
+if (NOT TARGET libcc)
+
+    # If a user has not specified a directory for libcc, then clone it from GitHub into lib/libcc.
+    if (NOT DEFINED LIBCC_DIR)
+        # Set the directory to clone libcc into.
+        set(LIBCC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/libcc)
+
+        # If the directory does not exist, then clone it.
+        if (NOT EXISTS ${LIBCC_DIR})
+            message(STATUS "Cloning libcc into ${LIBCC_DIR}")
+            execute_process(COMMAND git clone https://github.com/OtavioPiza/libcc.git ${LIBCC_DIR})
+
+        endif()
 
     endif()
 
-endif()
+    # Add libcc as a subdirectory with a build directory inside of LIBCC_DIR.
+    add_subdirectory(${LIBCC_DIR} ${LIBCC_DIR}/build)
 
-# Add libcc as a subdirectory with a build directory inside of LIBCC_DIR.
-add_subdirectory(${LIBCC_DIR} ${LIBCC_DIR}/build)
+endif()
 
 # Run enable testing if this is the top level project.
 if (${PROJECT_IS_TOP_LEVEL})
