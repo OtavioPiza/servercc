@@ -40,7 +40,7 @@ if (NOT DEFINED LIBCC_DIR)
 endif()
 
 # Add libcc as a subdirectory.
-add_subdirectory(${LIBCC_DIR})
+add_subdirectory(${LIBCC_DIR} build)
 
 # Run enable testing if this is the top level project.
 if (${PROJECT_IS_TOP_LEVEL})
