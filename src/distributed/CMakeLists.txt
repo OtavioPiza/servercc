@@ -21,6 +21,5 @@ target_link_libraries(
     PRIVATE
         client
         connector
-        libcc
         server
 )
