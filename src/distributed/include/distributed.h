@@ -17,8 +17,8 @@
 #include "tcp_server.h"
 #include "udp_server.h"
 
-using ostp::libcc::utils::Status;
 using ostp::libcc::data_structures::MessageQueue;
+using ostp::libcc::utils::Status;
 using ostp::servercc::Request;
 using ostp::servercc::client::MulticastClient;
 using ostp::servercc::connector::Connector;
@@ -68,10 +68,12 @@ class DistributedServer {
     ///     default_handler: The default handler to use for the distributed server.
     ///     peer_connect_callback: The callback to call when a peer connects.
     ///     peer_disconnect_callback: The callback to call when a peer disconnects.
-    DistributedServer(const string interface_name, const string interface_ip, const string group,
-                      const uint16_t port, const function<void(const Request)> default_handler,
-                      const function<void(const string)> peer_connect_callback,
-                      const function<void(const string)> peer_disconnect_callback);
+    DistributedServer(
+        const string interface_name, const string interface_ip, const string group,
+        const uint16_t port, const function<void(const Request)> default_handler,
+        const function<void(const string, DistributedServer &server)> peer_connect_callback,
+        const function<void(const string, DistributedServer &server)>
+            peer_disconnect_callback);
 
     // Methods
 
@@ -167,10 +169,10 @@ class DistributedServer {
     // Callbacks.
 
     /// The callback to call when a peer connects.
-    const function<void(const string)> peer_connect_callback;
+    const function<void(const string, DistributedServer &server)> peer_connect_callback;
 
     /// The callback to call when a peer disconnects.
-    const function<void(const string)> peer_disconnect_callback;
+    const function<void(const string, DistributedServer &server)> peer_disconnect_callback;
 
     // Logging datastructures.
 

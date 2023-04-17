@@ -33,11 +33,11 @@ using std::thread;
 // Constructors.
 
 /// See distributed.h for documentation.
-DistributedServer::DistributedServer(const string interface_name, const string interface_ip,
-                                     const string group, const uint16_t port,
-                                     const function<void(const Request)> default_handler,
-                                     const function<void(const string)> peer_connect_callback,
-                                     const function<void(const string)> peer_disconnect_callback)
+DistributedServer::DistributedServer(
+    const string interface_name, const string interface_ip, const string group, const uint16_t port,
+    const function<void(const Request)> default_handler,
+    const function<void(const string, DistributedServer &server)> peer_connect_callback,
+    const function<void(const string, DistributedServer &server)> peer_disconnect_callback)
     : interface_name(interface_name),
       interface_ip(interface_ip),
       group(group),
@@ -300,7 +300,7 @@ void DistributedServer::handle_connect(const Request request) {
 
     // Call the peer connect callback.
     if (peer_connect_callback != nullptr) {
-        peer_connect_callback(std::move(address.result));
+        peer_connect_callback(std::move(address.result), *this);
     }
 
     // Return and close the socket.
@@ -337,7 +337,7 @@ void DistributedServer::handle_connect_ack(const Request request) {
 
     // Call the peer connect callback.
     if (peer_connect_callback != nullptr) {
-        peer_connect_callback(std::move(address.result));
+        peer_connect_callback(std::move(address.result), *this);
     }
 
     // Return without closing the socket as it is now owned by the connector.
@@ -354,7 +354,7 @@ void DistributedServer::handle_peer_disconnect(const string &ip) {
 
     // Call the peer disconnect callback.
     if (peer_disconnect_callback != nullptr) {
-        peer_disconnect_callback(ip);
+        peer_disconnect_callback(ip, *this);
     }
 }
 
