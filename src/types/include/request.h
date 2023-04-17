@@ -22,16 +22,6 @@ struct Request {
 
     /// The request body.
     string data;
-
-    /// Constructs an empty request.
-    Request(){};
-
-    /// Constructs a request with the specified file descriptor and address.
-    ///
-    /// Arguments:
-    ///     fd: The file descriptor of the client.
-    ///     addr: The internet address of the client.
-    Request(const int fd, const sockaddr addr) : fd(fd), addr(addr){};
 };
 
 }  // namespace ostp::servercc
