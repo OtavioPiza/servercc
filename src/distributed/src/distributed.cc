@@ -373,7 +373,7 @@ void DistributedServer::handle_internal_request(const Request request) {
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
 
     // Create an address for the peer server.
-    const string address = string(ip) + ":" + std::to_string(port);
+    const string address = string(ip) + ":" + std::to_string(peer_port);
 
     // Look for the first space and first \r\n in the request.
     const int space_index = request.data.find(" ");
