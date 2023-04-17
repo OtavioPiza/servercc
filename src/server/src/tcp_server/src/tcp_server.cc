@@ -10,11 +10,11 @@ using ostp::servercc::Request;
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
 using ostp::servercc::server::TcpServer;
+using std::function;
 using std::vector;
 
 /// See tcp.h for documentation.
-TcpServer::TcpServer(int16_t port, ServerMode mode,
-                     std::function<void(const Request)> default_processor)
+TcpServer::TcpServer(int16_t port, ServerMode mode, function<void(const Request)> default_processor)
     : Server(port, mode, default_processor) {
     // Setup hints.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
@@ -88,15 +88,15 @@ TcpServer::TcpServer(int16_t port, ServerMode mode,
 }
 
 /// See tcp.h for documentation.
-TcpServer::TcpServer(int16_t port, std::function<void(const Request)> default_processor)
+TcpServer::TcpServer(int16_t port, function<void(const Request)> default_processor)
     : TcpServer(port, SERVERCC_DEFAULT_MODE, default_processor){};
 
 /// See tcp.h for documentation.
-TcpServer::TcpServer(std::function<void(const Request)> default_processor)
+TcpServer::TcpServer(function<void(const Request)> default_processor)
     : TcpServer(SERVERCC_DEFAULT_PORT, SERVERCC_DEFAULT_MODE, default_processor) {}
 
 /// See tcp.h for documentation.
-TcpServer::~TcpServer() { close(this->server_socket_fd); }
+TcpServer::~TcpServer() { close(server_socket_fd); }
 
 /// See server.h for documentation.
 [[noreturn]] void TcpServer::run() {

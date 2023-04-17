@@ -8,6 +8,7 @@
 
 using ostp::servercc::server::Server;
 using ostp::servercc::server::ServerMode;
+using std::function;
 using std::string;
 using std::vector;
 
@@ -28,7 +29,7 @@ class UdpServer : virtual public Server {
     ///     interfaces: The interfaces the server will listen on.
     ///     default_processor: The default processor for the server.
     UdpServer(int16_t port, ServerMode mode, const string group, const vector<string> interfaces,
-              std::function<void(const Request)> default_processor);
+              function<void(const Request)> default_processor);
 
     /// Constructor for the server with default mode.
     ///
@@ -38,7 +39,7 @@ class UdpServer : virtual public Server {
     ///     interfaces: The interfaces the server will listen on.
     ///     default_processor: The default processor for the server.
     UdpServer(int16_t port, const string group, const vector<string> interfaces,
-              std::function<void(const Request)> default_processor);
+              function<void(const Request)> default_processor);
 
     /// Constructs a server with default port and mode.
     ///
@@ -47,7 +48,7 @@ class UdpServer : virtual public Server {
     ///     interfaces: The interfaces the server will listen on.
     ///     default_processor: The default processor for the server.
     UdpServer(const string group, const vector<string> interfaces,
-              std::function<void(const Request)> default_processor);
+              function<void(const Request)> default_processor);
 
     /// Destructor for the server.
     ~UdpServer();
