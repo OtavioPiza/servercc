@@ -96,11 +96,17 @@ void DistributedServer::run() {
     // Send multicast requests to find peer servers.
     multicast_client.open_socket();
 
-    while (true) {
-        multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
-                                      std::to_string(port));
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+    // Create a new thread to handle the peer connections.
+    thread([this]() {
+        // Handle the peer connections.
+        while (true) {
+            while (true) {
+                multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
+                                              std::to_string(port));
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+            }
+        }
+    }).detach();
 };
 
 /// See distributed.h for documentation.
@@ -261,8 +267,8 @@ void DistributedServer::handle_connect(const Request request) {
 
     // Check if the peer server is already connected.
     if (peers.contains(ip)) {
-        log(Status::WARNING, "Ignoring connect from already connected peer server '" + string(ip) +
-                                 ":" + std::to_string(peer_port) + "'.");
+        log(Status::WARNING,
+            "Ignoring connect from already connected peer server '" + string(ip) + "'.");
         return;
     }
 
@@ -270,8 +276,7 @@ void DistributedServer::handle_connect(const Request request) {
     TcpClient peer_server(ip, peer_port);
     if (peer_server.open_socket().failed()) {
         // Close socket and return.
-        log(Status::ERROR, "Failed to open socket for peer server'" + string(ip) + ":" +
-                               std::to_string(peer_port) + "'.");
+        log(Status::ERROR, "Failed to open socket for peer server'" + string(ip) + "'.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
@@ -280,8 +285,7 @@ void DistributedServer::handle_connect(const Request request) {
     // Send a connect_ack message to the peer server and wait for a connect_ack.
     if (peer_server.send_message("connect_ack").failed()) {
         // Close socket and return.
-        log(Status::ERROR, "Failed to send connect_ack to peer server '" + string(ip) + ":" +
-                               std::to_string(peer_port) + "'.");
+        log(Status::ERROR, "Failed to send connect_ack to peer server '" + string(ip) + "'.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
@@ -291,8 +295,7 @@ void DistributedServer::handle_connect(const Request request) {
     // return.
     StatusOr<string> peer_server_request = peer_server.receive_message();
     if (peer_server_request.failed() || peer_server_request.result != "connect_ack") {
-        log(Status::ERROR, "Failed to receive connect_ack from peer server '" + string(ip) + ":" +
-                               std::to_string(peer_port) + "'.");
+        log(Status::ERROR, "Failed to receive connect_ack from peer server '" + string(ip) + "'.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
@@ -301,8 +304,7 @@ void DistributedServer::handle_connect(const Request request) {
     // Add the peer server to the connector and mappings.
     StatusOr address = connector.add_client(peer_server);
     if (address.failed()) {
-        log(Status::ERROR, "Failed to add peer server '" + string(ip) + ":" +
-                               std::to_string(peer_port) + "' to connector.");
+        log(Status::ERROR, "Failed to add peer server '" + string(ip) + "' to connector.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
@@ -332,16 +334,14 @@ void DistributedServer::handle_connect_ack(const Request request) {
     // Add the peer server to the connector and mappings.
     StatusOr address = connector.add_client(TcpClient(request.fd, ip, peer_port, request.addr));
     if (address.failed()) {
-        log(Status::ERROR, "Failed to add peer server '" + string(ip) + ":" +
-                               std::to_string(peer_port) + "' to connector.");
+        log(Status::ERROR, "Failed to add peer server '" + string(ip) + "' to connector.");
         close(request.fd);
         return;
     }
 
     // Send connect_ack to the peer server.
     if (connector.send_message(address.result, "connect_ack").failed()) {
-        log(Status::ERROR, "Failed to send connect_ack to peer server '" + string(ip) + ":" +
-                               std::to_string(peer_port) + "'.");
+        log(Status::ERROR, "Failed to send connect_ack to peer server '" + string(ip) + "'.");
         close(request.fd);
         return;
     }
