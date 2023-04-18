@@ -99,13 +99,8 @@ void DistributedServer::run() {
     // Create a new thread to handle the peer connections.
     thread([this]() {
         // Handle the peer connections.
-        while (true) {
-            while (true) {
-                multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
-                                              std::to_string(port));
-                std::this_thread::sleep_for(std::chrono::seconds(5));
-            }
-        }
+        multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
+                                      std::to_string(port));
     }).detach();
 };
 
