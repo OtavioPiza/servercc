@@ -28,7 +28,7 @@ void Connector::add_processor(const std::string& path, function<void(const Reque
 
 /// See connector.h for documentation.
 StatusOr<string> Connector::add_client(TcpClient client) {
-    const string address = client.get_address() + ":" + std::to_string(client.get_port());
+    const string address = client.get_address();
 
     // Open the socket and run the client.
     if (client.open_socket().failed()) {

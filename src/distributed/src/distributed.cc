@@ -95,8 +95,12 @@ void DistributedServer::run() {
 
     // Send multicast requests to find peer servers.
     multicast_client.open_socket();
-    multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
-                                  std::to_string(port));
+
+    while (true) {
+        multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
+                                      std::to_string(port));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 };
 
 /// See distributed.h for documentation.
@@ -255,6 +259,13 @@ void DistributedServer::handle_connect(const Request request) {
         return;
     }
 
+    // Check if the peer server is already connected.
+    if (peers.contains(ip)) {
+        log(Status::WARNING, "Ignoring connect from already connected peer server '" + string(ip) +
+                                 ":" + std::to_string(peer_port) + "'.");
+        return;
+    }
+
     // Create a TCP client for the peer server and try to connect to it.
     TcpClient peer_server(ip, peer_port);
     if (peer_server.open_socket().failed()) {
@@ -373,7 +384,7 @@ void DistributedServer::handle_internal_request(const Request request) {
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
 
     // Create an address for the peer server.
-    const string address = string(ip) + ":" + std::to_string(peer_port);
+    const string address = string(ip);
 
     // Look for the first space and first \r\n in the request.
     const int space_index = request.data.find(" ");
