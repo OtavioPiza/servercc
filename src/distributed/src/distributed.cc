@@ -92,16 +92,7 @@ void DistributedServer::run() {
     run_tcp_server();
     run_udp_server();
     run_logger_service();
-
-    // Send multicast requests to find peer servers.
-    multicast_client.open_socket();
-
-    // Create a new thread to handle the peer connections.
-    // thread([this]() {
-    // Handle the peer connections.
-    multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
-                                  std::to_string(port));
-    // }).detach();
+    send_connect_message();
 };
 
 /// See distributed.h for documentation.
@@ -121,8 +112,22 @@ StatusOr<void> DistributedServer::add_handler(const string &protocol,
 
 /// See distributed.h for documentation.
 StatusOr<int> DistributedServer::multicast_message(const string &message) {
+    // Open the multicast socket.
+    const auto result = multicast_client.open_socket();
+    if (result.failed()) {
+        return StatusOr<int>(Status::ERROR, "Failed to open multicast socket.", -1);
+    }
+
     // Send the message to the multicast group.
     return std::move(multicast_client.send_message(message));
+}
+
+/// See distributed.h for documentation.
+StatusOr<int> DistributedServer::send_connect_message() {
+    // Create a new thread to handle the peer connections.
+    // thread([this]() {
+    // Handle the peer connections.
+    return (multicast_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +  std::to_string(port)));
 }
 
 /// See distributed.h for documentation.
@@ -271,7 +276,7 @@ void DistributedServer::handle_connect(const Request request) {
     TcpClient peer_server(ip, peer_port);
     if (peer_server.open_socket().failed()) {
         // Close socket and return.
-        log(Status::ERROR, "Failed to open socket for peer server'" + string(ip) + "'.");
+        log(Status::ERROR, "Failed to open socket for peer server '" + string(ip) + "'.");
         close(peer_server.get_fd());
         close(request.fd);
         return;

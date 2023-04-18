@@ -72,8 +72,7 @@ class DistributedServer {
         const string interface_name, const string interface_ip, const string group,
         const uint16_t port, const function<void(const Request)> default_handler,
         const function<void(const string, DistributedServer &server)> peer_connect_callback,
-        const function<void(const string, DistributedServer &server)>
-            peer_disconnect_callback);
+        const function<void(const string, DistributedServer &server)> peer_disconnect_callback);
 
     // Methods
 
@@ -98,8 +97,14 @@ class DistributedServer {
     ///     message: The message to send.
     ///
     /// Returns:
-    ///     The number of servers that received the message or an error.
+    ///     The number of bytes sent or an error.
     StatusOr<int> multicast_message(const string &message);
+
+    /// Method to send a multicast a connect request to all the servers.
+    ///
+    /// Returns:
+    ///    The number of bytes sent or an error.
+    StatusOr<int> send_connect_message();
 
     /// Method to send a message to a specific server.
     ///
