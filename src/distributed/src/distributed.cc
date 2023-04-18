@@ -92,7 +92,20 @@ void DistributedServer::run() {
     run_tcp_server();
     run_udp_server();
     run_logger_service();
-    send_connect_message();
+
+    // Send the connect message every 10 seconds.
+    thread([this]() {
+        while (true) {
+            // Send the connect message.
+            const StatusOr result = send_connect_message();
+            if (result.failed()) {
+                log(result.status, std::move(result.status_message));
+            }
+
+            // Sleep for 10 seconds.
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+        }
+    }).detach();
 };
 
 /// See distributed.h for documentation.
@@ -124,10 +137,7 @@ StatusOr<int> DistributedServer::multicast_message(const string &message) {
 
 /// See distributed.h for documentation.
 StatusOr<int> DistributedServer::send_connect_message() {
-    // Create a new thread to handle the peer connections.
-    // thread([this]() {
-    // Handle the peer connections.
-    return (multicast_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +  std::to_string(port)));
+    return (multicast_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " + std::to_string(port)));
 }
 
 /// See distributed.h for documentation.
@@ -258,17 +268,9 @@ void DistributedServer::handle_connect(const Request request) {
     const uint16_t peer_port = std::stoi(request.data.substr(space_index + 1));
 
     // If the ip address is the same as the interface ip then ignore the
-    // request.
-    if (ip == interface_ip) {
-        log(Status::WARNING, "Ignoring connect from self.");
+    // request or if the peer server is already connected.
+    if (ip == interface_ip || peers.contains(ip)) {
         close(request.fd);
-        return;
-    }
-
-    // Check if the peer server is already connected.
-    if (peers.contains(ip)) {
-        log(Status::WARNING,
-            "Ignoring connect from already connected peer server '" + string(ip) + "'.");
         return;
     }
 
@@ -276,7 +278,6 @@ void DistributedServer::handle_connect(const Request request) {
     TcpClient peer_server(ip, peer_port);
     if (peer_server.open_socket().failed()) {
         // Close socket and return.
-        log(Status::ERROR, "Failed to open socket for peer server '" + string(ip) + "'.");
         close(peer_server.get_fd());
         close(request.fd);
         return;
