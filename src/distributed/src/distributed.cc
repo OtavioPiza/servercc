@@ -97,11 +97,11 @@ void DistributedServer::run() {
     multicast_client.open_socket();
 
     // Create a new thread to handle the peer connections.
-    thread([this]() {
-        // Handle the peer connections.
-        multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
-                                      std::to_string(port));
-    }).detach();
+    // thread([this]() {
+    // Handle the peer connections.
+    multicast_client.send_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
+                                  std::to_string(port));
+    // }).detach();
 };
 
 /// See distributed.h for documentation.
