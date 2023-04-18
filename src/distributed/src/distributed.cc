@@ -103,7 +103,7 @@ void DistributedServer::run() {
             }
 
             // Sleep for 10 seconds.
-            std::this_thread::sleep_for(std::chrono::seconds(10));
+            std::this_thread::sleep_for(std::chrono::seconds(60));
         }
     }).detach();
 };
