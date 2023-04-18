@@ -93,19 +93,21 @@ void DistributedServer::run() {
     run_udp_server();
     run_logger_service();
 
-    // Send the connect message every 10 seconds.
-    thread([this]() {
-        while (true) {
-            // Send the connect message.
-            const StatusOr result = send_connect_message();
-            if (result.failed()) {
-                log(result.status, std::move(result.status_message));
-            }
-
-            // Sleep for 10 seconds.
-            std::this_thread::sleep_for(std::chrono::seconds(60));
+    // Try to connect to the multicast group.
+    int retries = 5;
+    while (true) {
+        // Send the connect message.
+        const StatusOr result = send_connect_message();
+        if (result.failed()) {
+            log(result.status, result.status_message);
+        } else {
+            return;
         }
-    }).detach();
+    }
+
+    // If we are out of retries, throw an exception.
+    log(Status::ERROR, "Failed to connect to the multicast group. Out of retries.");
+    throw std::runtime_error("Failed to connect to the multicast group. Out of retries.");
 };
 
 /// See distributed.h for documentation.
