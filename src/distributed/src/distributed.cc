@@ -222,7 +222,7 @@ void DistributedServer::run_logger_service() {
 
             // Wait for a log message and then log it depending on the log level.
             log_queue_semaphore.acquire();
-            std::pair<const Status, const string> log_message = std::move(log_queue.front());
+            std::pair<const Status, const string> log_message = log_queue.front();
             log_queue.pop();
 
             // Log the message.
