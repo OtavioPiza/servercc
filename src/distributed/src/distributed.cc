@@ -251,8 +251,6 @@ void DistributedServer::run_logger_service() {
 
 /// See distributed.h for documentation.
 void DistributedServer::handle_connect(const Request request) {
-    log(Status::INFO, "Received connect request.");
-
     // Find the port of the peer server that sent the request by looking after
     // the first space in the request.
     int space_index;
