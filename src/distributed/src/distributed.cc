@@ -324,8 +324,6 @@ void DistributedServer::handle_connect(const Request request) {
 
 /// See distributed.h for documentation.
 void DistributedServer::handle_connect_ack(const Request request) {
-    log(Status::INFO, "Received connect_ack request.");
-
     // Get the port and ip from the connect request.
     sockaddr_in *addr = (sockaddr_in *)&request.addr;
     uint16_t peer_port = ntohs(addr->sin_port);
