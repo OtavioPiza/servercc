@@ -68,14 +68,14 @@ void Connector::run_client(const string address) {
             // Read the request.
             StatusOr message = client.receive_message();
             if (message.failed()) {
+                // Close the socket.
+                client.close_socket();
+
                 // Remove the client from the map.
                 clients.erase(address);
 
                 // Call the disconnect handler.
                 disconnect_handler(address);
-
-                // Close the socket.
-                client.close_socket();
 
                 // Exit the loop.
                 break;

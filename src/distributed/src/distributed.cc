@@ -54,7 +54,7 @@ DistributedServer::DistributedServer(
           [this](const Request request) {
               this->forward_request_to_protocol_processors(std::move(request));
           },
-          [this](const string &ip) { this->handle_peer_disconnect(ip); }),
+          [this](const string &peer_ip) { this->on_connector_disconnect(peer_ip); }),
       multicast_client(interface_name, group, port),
       protocol_processors(default_handler),
       log_queue_semaphore(0),
@@ -164,6 +164,17 @@ StatusOr<int> DistributedServer::send_message(const string &address, const strin
         return StatusOr(result.status, std::move(result.status_message), -1);
     }
 
+    // Add the message ID to the peers_message_ids map.
+    message_ids_to_peers[id] = address;
+
+    // Add the message ID to the peers_message_ids map.
+    auto message_ids_it = peers_to_message_ids.find(address);
+    if (message_ids_it == peers_to_message_ids.end()) {
+        peers_to_message_ids.insert({address, {id}});
+    } else {
+        message_ids_it->second.insert(id);
+    }
+
     // Return the request id.
     return StatusOr(Status::OK, "Message sent.", id);
 }
@@ -179,9 +190,22 @@ StatusOr<string> DistributedServer::receive_message(int id) {
     // Get the message from the queue.
     StatusOr<string> message_res = it->second->pop();
 
-    // If the is closed and empty, remove it from the map.
+    // If the is closed and empty, remove it from the messages_queues map.
     if (it->second->is_closed() && it->second->empty()) {
+        // Erase the message queue.
         message_queues.erase(it);
+
+        // Erase the message ID from the peers_to_message_ids and remove the peer if it is empty.
+        auto message_ids_it = peers_to_message_ids.find(message_ids_to_peers[id]);
+        if (message_ids_it != peers_to_message_ids.end()) {
+            message_ids_it->second.erase(id);
+            if (message_ids_it->second.empty()) {
+                peers_to_message_ids.erase(message_ids_it);
+            }
+        }
+
+        // Erase the message ID from the message_ids_to_peers map.
+        message_ids_to_peers.erase(id);
     }
 
     // Return the message.
@@ -247,6 +271,28 @@ void DistributedServer::run_logger_service() {
             }
         }
     });
+}
+
+// Callbacks.
+
+/// See distributed.h for documentation.
+void DistributedServer::on_connector_disconnect(const string &ip) {
+    // Look for pending messages from the disconnected peer.
+    auto message_ids_it = peers_to_message_ids.find(ip);
+    if (message_ids_it != peers_to_message_ids.end()) {
+        // Log an error.
+        log(Status::ERROR, "Peer disconnected without sending a response. Missing messages: " +
+                               std::to_string(message_ids_it->second.size()) + ".");
+
+        // Close the message queues of the pending messages remove the message IDs from the
+        // message_ids_to_peers map.
+        for (const int id : message_ids_it->second) {
+            message_queues[id]->close();
+        }
+    }
+
+    // Call the user-specified disconnect callback.
+    if (peer_disconnect_callback) peer_disconnect_callback(ip, *this);
 }
 
 // Handlers.

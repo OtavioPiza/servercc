@@ -171,6 +171,12 @@ class DistributedServer {
     /// Maps a message ID to a semaphore to wait for a response and a queue to store the response.
     unordered_map<int, shared_ptr<MessageQueue>> message_queues;
 
+    /// Maps a peer IP to a set of message IDs that have been sent to it.
+    unordered_map<string, unordered_set<int>> peers_to_message_ids;
+
+    /// Maps a message ID to the peer IP that it was sent to.
+    unordered_map<int, string> message_ids_to_peers;
+
     // Callbacks.
 
     /// The callback to call when a peer connects.
@@ -197,6 +203,14 @@ class DistributedServer {
 
     /// Waits for a log message to be added to the log queue and prints it indefinitely.
     void run_logger_service();
+
+    // Internal callback methods.
+
+    /// Method to handle a Connector disconnect.
+    ///
+    /// Arguments:
+    ///     ip: The ip address of the peer that disconnected.
+    void on_connector_disconnect(const string &ip);
 
     // Handler methods.
 
