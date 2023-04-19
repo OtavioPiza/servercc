@@ -313,6 +313,9 @@ void DistributedServer::handle_connect(const Request request) {
     // Get the port from the connect request data.
     const uint16_t peer_port = std::stoi(request.data.substr(space_index + 1));
 
+    log(Status::INFO, "Received connect request from peer server '" + string(ip) + "' on port " +
+                          std::to_string(peer_port) + ".");
+
     // If the ip address is the same as the interface ip then ignore the
     // request or if the peer server is already connected.
     if (ip == interface_ip || peers.contains(ip)) {
