@@ -226,12 +226,6 @@ class DistributedServer {
     ///     request: The request to handle.
     void handle_connect_ack(const Request request);
 
-    /// Method to handle a disconnect request.
-    ///
-    /// Arguments:
-    ///     request: The request to handle.
-    void handle_peer_disconnect(const string &ip);
-
     /// Method to forward the specified request to the protocol processors.
     ///
     /// Arguments:

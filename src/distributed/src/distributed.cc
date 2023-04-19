@@ -277,6 +277,8 @@ void DistributedServer::run_logger_service() {
 
 /// See distributed.h for documentation.
 void DistributedServer::on_connector_disconnect(const string &ip) {
+    log(Status::INFO, "Peer disconnected: " + ip + ".");
+
     // Look for pending messages from the disconnected peer.
     auto message_ids_it = peers_to_message_ids.find(ip);
     if (message_ids_it != peers_to_message_ids.end()) {
@@ -313,12 +315,14 @@ void DistributedServer::handle_connect(const Request request) {
     // Get the port from the connect request data.
     const uint16_t peer_port = std::stoi(request.data.substr(space_index + 1));
 
+    // Log the connect request.
     log(Status::INFO, "Received connect request from peer server '" + string(ip) + "' on port " +
                           std::to_string(peer_port) + ".");
 
     // If the ip address is the same as the interface ip then ignore the
     // request or if the peer server is already connected.
     if (ip == interface_ip || peers.contains(ip)) {
+        log(Status::WARNING, "Ignoring connect request from peer server '" + string(ip) + "'.");
         close(request.fd);
         return;
     }
@@ -326,6 +330,7 @@ void DistributedServer::handle_connect(const Request request) {
     // Create a TCP client for the peer server and try to connect to it.
     TcpClient peer_server(ip, peer_port);
     if (peer_server.open_socket().failed()) {
+        log(Status::ERROR, "Failed to open socket to peer server '" + string(ip) + "'.");
         // Close socket and return.
         close(peer_server.get_fd());
         close(request.fd);
@@ -379,6 +384,10 @@ void DistributedServer::handle_connect_ack(const Request request) {
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
 
+    // Log the connect_ack request.
+    log(Status::INFO, "Received connect_ack from peer server '" + string(ip) + "' on port " +
+                          std::to_string(peer_port) + ".");
+
     // Add the peer server to the connector and mappings.
     StatusOr address = connector.add_client(TcpClient(request.fd, ip, peer_port, request.addr));
     if (address.failed()) {
@@ -401,20 +410,6 @@ void DistributedServer::handle_connect_ack(const Request request) {
 
     // Return without closing the socket as it is now owned by the connector.
     return;
-}
-
-/// See distributed.h for documentation.
-void DistributedServer::handle_peer_disconnect(const string &ip) {
-    // Remove the peer server from the connector and mappings.
-    log(Status::INFO, "Peer server: '" + ip + "' disconnected.");
-
-    // Remove the peer server from the connector and mappings.
-    peers.erase(ip);
-
-    // Call the peer disconnect callback.
-    if (peer_disconnect_callback != nullptr) {
-        peer_disconnect_callback(ip, *this);
-    }
 }
 
 /// See distributed.h for documentation.
