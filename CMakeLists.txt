@@ -50,8 +50,8 @@ if (NOT TARGET libcc)
 
     endif()
 
-    # Add libcc as a subdirectory with a build directory inside of LIBCC_DIR.
-    add_subdirectory(${LIBCC_DIR} ${LIBCC_DIR}/build)
+    # Add libcc as a subdirectory with a build directory of build.
+    add_subdirectory(${LIBCC_DIR} ${CMAKE_CURRENT_BINARY_DIR}/libcc)
 
 endif()
 
