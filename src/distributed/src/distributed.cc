@@ -293,6 +293,9 @@ void DistributedServer::on_connector_disconnect(const string &ip) {
         }
     }
 
+    // Remove from the peers list.
+    peers.erase(ip);
+
     // Call the user-specified disconnect callback.
     if (peer_disconnect_callback) peer_disconnect_callback(ip, *this);
 }
