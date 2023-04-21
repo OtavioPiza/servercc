@@ -10,14 +10,14 @@
 #include <vector>
 
 #include "connector.h"
-#include "message_queue.h"
+#include "message_buffer.h"
 #include "multicast_client.h"
 #include "request.h"
 #include "status_or.h"
 #include "tcp_server.h"
 #include "udp_server.h"
 
-using ostp::libcc::data_structures::MessageQueue;
+using ostp::libcc::data_structures::MessageBuffer;
 using ostp::libcc::utils::Status;
 using ostp::servercc::Request;
 using ostp::servercc::client::MulticastClient;
@@ -123,7 +123,7 @@ class DistributedServer {
     ///
     /// Returns:
     ///     The next segment of the response or an error.
-    StatusOr<string> receive_message(const int id);
+    StatusOr<const string> receive_message(const int id);
 
     /// Adds a log message to the log queue.
     ///
@@ -169,7 +169,7 @@ class DistributedServer {
     DefaultTrie<char, function<void(const Request)>> protocol_processors;
 
     /// Maps a message ID to a semaphore to wait for a response and a queue to store the response.
-    unordered_map<int, shared_ptr<MessageQueue>> message_queues;
+    unordered_map<int, shared_ptr<MessageBuffer>> message_buffers;
 
     /// Maps a peer IP to a set of message IDs that have been sent to it.
     unordered_map<string, unordered_set<int>> peers_to_message_ids;

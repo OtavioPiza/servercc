@@ -13,7 +13,7 @@
 #include "status_or.h"
 #include "tcp_client.h"
 
-using ostp::libcc::data_structures::MessageQueue;
+using ostp::libcc::data_structures::MessageBuffer;
 using ostp::libcc::utils::log_error;
 using ostp::libcc::utils::log_info;
 using ostp::libcc::utils::log_ok;
@@ -146,11 +146,11 @@ StatusOr<int> DistributedServer::send_connect_message() {
 StatusOr<int> DistributedServer::send_message(const string &address, const string &message) {
     // Generate a new random request id.
     int id;
-    while (message_queues.contains(id = std::rand()))
+    while (message_buffers.contains(id = std::rand()))
         ;
 
     // Add the ID to the message queue.
-    message_queues.insert({id, std::make_shared<MessageQueue>()});
+    message_buffers.insert({id, std::make_shared<MessageBuffer>()});
 
     // Wrap the message in a request.
     const string request =
@@ -160,7 +160,7 @@ StatusOr<int> DistributedServer::send_message(const string &address, const strin
     const StatusOr result = connector.send_message(address, request);
     if (result.failed()) {
         // Remove the ID from the message queue.
-        message_queues.erase(id);
+        message_buffers.erase(id);
         return StatusOr(result.status, std::move(result.status_message), -1);
     }
 
@@ -180,20 +180,20 @@ StatusOr<int> DistributedServer::send_message(const string &address, const strin
 }
 
 /// See distributed.h for documentation.
-StatusOr<string> DistributedServer::receive_message(int id) {
+StatusOr<const string> DistributedServer::receive_message(int id) {
     // Look for the message queue with the specified ID.
-    auto it = message_queues.find(id);
-    if (it == message_queues.end()) {
-        return StatusOr<string>(Status::ERROR, "Invalid request ID.", "");
+    auto it = message_buffers.find(id);
+    if (it == message_buffers.end()) {
+        return StatusOr<const string>(Status::ERROR, "Invalid request ID.", "");
     }
 
     // Get the message from the queue.
-    StatusOr<string> message_res = it->second->pop();
+    StatusOr<const string> message_res = it->second->pop();
 
     // If the is closed and empty, remove it from the messages_queues map.
     if (it->second->is_closed() && it->second->empty()) {
         // Erase the message queue.
-        message_queues.erase(it);
+        message_buffers.erase(it);
 
         // Erase the message ID from the peers_to_message_ids and remove the peer if it is empty.
         auto message_ids_it = peers_to_message_ids.find(message_ids_to_peers[id]);
@@ -289,7 +289,7 @@ void DistributedServer::on_connector_disconnect(const string &ip) {
         // Close the message queues of the pending messages remove the message IDs from the
         // message_ids_to_peers map.
         for (const int id : message_ids_it->second) {
-            message_queues[id]->close();
+            message_buffers[id]->close();
         }
     }
 
@@ -538,8 +538,8 @@ void DistributedServer::handle_internal_response(const Request request) {
     const uint64_t message_id = std::stoi(request.data.substr(space_index + 1, newline_index));
 
     // Look up the message ID in the message ID map.
-    auto message_queue = message_queues.find(message_id);
-    if (message_queue == message_queues.end()) {
+    auto message_buffer = message_buffers.find(message_id);
+    if (message_buffer == message_buffers.end()) {
         log(Status::ERROR,
             "Received response for unknown message ID: " + std::to_string(message_id));
         return;
@@ -549,7 +549,7 @@ void DistributedServer::handle_internal_response(const Request request) {
     const string response = request.data.substr(newline_index + 2);
 
     // Add the response to the message queue.
-    message_queue->second.get()->push(std::move(response));
+    message_buffer->second.get()->push(std::move(response));
 }
 
 /// See distributed.h for documentation.
@@ -565,13 +565,13 @@ void DistributedServer::handle_internal_response_end(const Request response) {
     const uint64_t message_id = std::stoi(response.data.substr(space_index + 1));
 
     // Look up the message ID in the message ID map.
-    auto message_queue = message_queues.find(message_id);
-    if (message_queue == message_queues.end()) {
+    auto message_buffer = message_buffers.find(message_id);
+    if (message_buffer == message_buffers.end()) {
         log(Status::ERROR,
             "Received response end for unknown message ID: " + std::to_string(message_id));
         return;
     }
 
     // Set the message queue to done.
-    message_queue->second.get()->close();
+    message_buffer->second.get()->close();
 }
