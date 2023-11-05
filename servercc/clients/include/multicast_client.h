@@ -1,0 +1,53 @@
+#ifndef SERVERCC_UDP_CLIENT_H
+#define SERVERCC_UDP_CLIENT_H
+
+#include <memory>
+
+#include "../../servercc/types/types.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "client.h"
+
+// A UDP client.
+namespace ostp::servercc {
+
+class MulticastClient : virtual public Client {
+   private:
+    // The interface to use.
+    const absl::string_view interface;
+
+    // The time-to-live for multicast packets.
+    const uint8_t ttl;
+
+   public:
+    // Constructors
+
+    // Constructs a Multicast client over the specified interface on the specified interface
+    // in the specified multicast group on the specified port with the specified time-to-live.
+    //
+    // Arguments:
+    //     interface: The interface to use.
+    //     multicast_group: The multicast group to join.
+    //     port: The server's port.
+    MulticastClient(const absl::string_view interface, const absl::string_view multicastGroup,
+                    const uint16_t port, const uint8_t ttl);
+
+    // Client methods.
+
+    // See abstract_client.h
+    absl::Status openSocket() override;
+
+    // See abstract_client.h
+    absl::Status closeSocket() override;
+
+    // See abstract_client.h
+    absl::Status sendMessage(std::unique_ptr<Message> message) override;
+
+    // See abstract_client.h
+    absl::StatusOr<std::unique_ptr<Message>> receiveMessage() override;
+};
+
+}  // namespace ostp::servercc
+
+#endif
