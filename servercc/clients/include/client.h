@@ -1,6 +1,7 @@
 #ifndef SERVERCC_CLIENT_H
 #define SERVERCC_CLIENT_H
 
+#include <inttypes.h>
 #include <netdb.h>
 
 #include <cstring>
@@ -115,16 +116,16 @@ class Client {
     // Returns:
     //     A status indicating whether the message was sent successfully and the
     //     number of bytes sent.
-    virtual absl::Status sendMessage(std::unique_ptr<Message> message) = 0;
+    virtual absl::Status sendMessage(const Message& message) = 0;
 
     // Blocks until a message is received from the server.
     //
     // Returns:
     //     A status indicating whether a message was received successfully and
     //     the message received.
-    virtual absl::StatusOr<std::unique_ptr<Message>> receiveMessage() = 0;
+    virtual std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage() = 0;
 };
 
-}  // namespace ostp::servercc::client
+}  // namespace ostp::servercc
 
 #endif

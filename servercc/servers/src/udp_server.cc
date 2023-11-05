@@ -45,8 +45,7 @@ UdpServer::UdpServer(int16_t port, absl::string_view groupAddress,
     while (addr != NULL) {
         // Try to create a socket.
         int yes = 1;
-
-        // Try to create a socket.
+// Try to create a socket.
         if ((server_socket_fd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol)) <
             0) {
             perror("socket");
@@ -123,16 +122,14 @@ UdpServer::~UdpServer() { close(this->serverSocketFd); }
         request->fd = this->serverSocketFd;
         int bytes_read = recvfrom(this->serverSocketFd, &request->message.header,
                                   kMessageHeaderLength, 0, &request->addr, &addr_len);
-        if (bytes_read <= kMessageHeaderLength) {
+        if (bytes_read < kMessageHeaderLength) {
             perror("recvfrom");
             continue;
         }
-        request->message.header.length = ntohs(request->message.header.length);
-        request->message.header.protocol = ntohs(request->message.header.protocol);
         request->message.body.data.resize(request->message.header.length);
         bytes_read = recvfrom(this->serverSocketFd, request->message.body.data.data(),
                               request->message.header.length, 0, &request->addr, &addr_len);
-        if (bytes_read <= request->message.header.length) {
+        if (bytes_read < request->message.header.length) {
             perror("recvfrom");
             continue;
         }

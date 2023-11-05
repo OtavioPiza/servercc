@@ -18,7 +18,9 @@ target_include_directories(
 target_link_libraries(
     tcp_server
     PRIVATE 
-        libcc
+        absl::flat_hash_map
+        absl::status
+        absl::strings
         server
         types
 )
@@ -35,6 +37,8 @@ target_include_directories(
 target_link_libraries(
     udp_server
     PRIVATE 
+        absl::flat_hash_map
+        absl::status
         absl::strings
         server
         types
@@ -54,4 +58,3 @@ target_include_directories(
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
-

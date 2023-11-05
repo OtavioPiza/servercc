@@ -102,19 +102,19 @@ TcpServer::~TcpServer() { close(serverSocketFd); }
         }
 
         // Create a request checking for errors.
-        std::unique_ptr<Request> request = std::make_unique<Request>(clientSocketFd, clientAddr);
+        std::unique_ptr<Request> request = std::make_unique<Request>();
+        request->fd = clientSocketFd;
+        request->addr = clientAddr;
         int bytesRead = recv(clientSocketFd, &request->message.header, kMessageHeaderLength, 0);
-        if (bytesRead <= kMessageHeaderLength) {
+        if (bytesRead < kMessageHeaderLength) {
             perror("recv");
             close(clientSocketFd);
             continue;
         }
-        request->message.header.length = ntohl(request->message.header.length);
-        request->message.header.protocol = ntohs(request->message.header.protocol);
         request->message.body.data.resize(request->message.header.length);
         bytesRead = recv(clientSocketFd, request->message.body.data.data(),
                          request->message.header.length, 0);
-        if (bytesRead <= request->message.header.length) {
+        if (bytesRead < request->message.header.length) {
             perror("recvfrom");
             close(clientSocketFd);
             continue;

@@ -79,22 +79,22 @@ absl::Status MulticastClient::closeSocket() {
 };
 
 // See udp_client.h for documentation.
-absl::Status MulticastClient::sendMessage(std::unique_ptr<Message> message) {
+absl::Status MulticastClient::sendMessage(const Message &message) {
     // If the socket is not open, return.
     if (!isSocketOpen) {
         return absl::Status(absl::StatusCode::kFailedPrecondition, "Socket is not open.");
     }
 
     // Send the message.
-    auto sent = sendto(clientFd, &message->header, kMessageHeaderLength, 0, &clientAddr,
-                       sizeof(clientAddr));
+    auto sent =
+        sendto(clientFd, &message.header, kMessageHeaderLength, 0, &clientAddr, sizeof(clientAddr));
     if (sent < kMessageHeaderLength) {
         perror("sendto");
         return absl::Status(absl::StatusCode::kInternal, "Failed to send message header.");
     }
-    sent = sendto(clientFd, message->body.data.data(), message->header.length, 0,
-                             &clientAddr, sizeof(clientAddr));
-    if (sent < message->header.length) {
+    sent = sendto(clientFd, message.body.data.data(), message.header.length, 0, &clientAddr,
+                  sizeof(clientAddr));
+    if (sent < message.header.length) {
         perror("sendto");
         return absl::Status(absl::StatusCode::kInternal, "Failed to send message body.");
     }
@@ -102,10 +102,10 @@ absl::Status MulticastClient::sendMessage(std::unique_ptr<Message> message) {
 }
 
 // See udp_client.h for documentation.
-absl::StatusOr<std::unique_ptr<Message>> MulticastClient::receiveMessage() {
+std::pair<absl::Status, std::unique_ptr<Message>> MulticastClient::receiveMessage() {
     // If the socket is not open, return.
     if (!isSocketOpen) {
-        return absl::Status(absl::StatusCode::kFailedPrecondition, "Socket is not open.");
+        return { absl::FailedPreconditionError("Socket is not open."), nullptr };
     }
 
     // Receive the message.
@@ -113,7 +113,7 @@ absl::StatusOr<std::unique_ptr<Message>> MulticastClient::receiveMessage() {
     auto received = recvfrom(clientFd, &message->header, kMessageHeaderLength, 0, NULL, NULL);
     if (received < kMessageHeaderLength) {
         perror("recvfrom");
-        return absl::Status(absl::StatusCode::kInternal, "Failed to receive message.");
+        return { absl::InternalError("Failed to receive message header."), nullptr };
     }
     message->header.length = ntohl(message->header.length);
     message->header.protocol = ntohl(message->header.protocol);
@@ -121,7 +121,7 @@ absl::StatusOr<std::unique_ptr<Message>> MulticastClient::receiveMessage() {
     received = recvfrom(clientFd, message->body.data.data(), message->header.length, 0, NULL, NULL);
     if (received < message->header.length) {
         perror("recvfrom");
-        return absl::Status(absl::StatusCode::kInternal, "Failed to receive message.");
+        return { absl::InternalError("Failed to receive message body."), nullptr };
     }
-    return std::move(message);
+    return { absl::OkStatus(), std::move(message) };
 }

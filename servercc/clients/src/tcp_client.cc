@@ -98,20 +98,20 @@ absl::Status TcpClient::closeSocket() {
 }
 
 // See tcp_client.h for documentation.
-absl::Status TcpClient::sendMessage(std::unique_ptr<Message> message) {
+absl::Status TcpClient::sendMessage(const Message &message) {
     // If the socket is not open, throw an exception.
     if (clientFd == -1) {
         return absl::Status(absl::StatusCode::kFailedPrecondition, "Socket is not open.");
     }
 
     // Send the message.
-    auto sent = send(clientFd, &message->header, kMessageHeaderLength, 0);
+    auto sent = send(clientFd, &message.header, kMessageHeaderLength, 0);
     if (sent < kMessageHeaderLength) {
         perror("send");
         return absl::Status(absl::StatusCode::kInternal, "Failed to send message header.");
     }
-    sent = send(clientFd, message->body.data.data(), message->header.length, 0);
-    if (sent < message->header.length) {
+    sent = send(clientFd, message.body.data.data(), message.header.length, 0);
+    if (sent < message.header.length) {
         perror("send");
         return absl::Status(absl::StatusCode::kInternal, "Failed to send message body.");
     }
@@ -121,10 +121,10 @@ absl::Status TcpClient::sendMessage(std::unique_ptr<Message> message) {
 }
 
 // See tcp_client.h for documentation.
-absl::StatusOr<std::unique_ptr<Message>> TcpClient::receiveMessage() {
+std::pair<absl::Status, std::unique_ptr<Message>> TcpClient::receiveMessage() {
     // If the socket is not open, return an error.
     if (clientFd == -1) {
-        return absl::Status(absl::StatusCode::kFailedPrecondition, "Socket is not open.");
+        return {absl::FailedPreconditionError("Socket is not open."), nullptr};
     }
 
     // Receive message.
@@ -132,7 +132,7 @@ absl::StatusOr<std::unique_ptr<Message>> TcpClient::receiveMessage() {
     auto received = recv(clientFd, &message->header, kMessageHeaderLength, 0);
     if (received < kMessageHeaderLength) {
         perror("recv");
-        return absl::Status(absl::StatusCode::kInternal, "Failed to receive message header.");
+        return {absl::InternalError("Failed to receive message header."), nullptr};
     }
     message->header.length = ntohl(message->header.length);
     message->header.protocol = ntohl(message->header.protocol);
@@ -140,9 +140,9 @@ absl::StatusOr<std::unique_ptr<Message>> TcpClient::receiveMessage() {
     received = recv(clientFd, message->body.data.data(), message->header.length, 0);
     if (received < message->header.length) {
         perror("recv");
-        return absl::Status(absl::StatusCode::kInternal, "Failed to receive message body.");
+        return {absl::InternalError("Failed to receive message body."), nullptr};
     }
 
     // Return.
-    return std::move(message);
+    return {absl::OkStatus(), std::move(message)};
 }

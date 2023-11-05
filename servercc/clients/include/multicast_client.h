@@ -42,10 +42,10 @@ class MulticastClient : virtual public Client {
     absl::Status closeSocket() override;
 
     // See abstract_client.h
-    absl::Status sendMessage(std::unique_ptr<Message> message) override;
+    absl::Status sendMessage(const Message& message) override;
 
     // See abstract_client.h
-    absl::StatusOr<std::unique_ptr<Message>> receiveMessage() override;
+    std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage() override;
 };
 
 }  // namespace ostp::servercc

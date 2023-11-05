@@ -2,9 +2,9 @@ add_library(client INTERFACE)
 target_link_libraries(
     client
     INTERFACE
-        types
         absl::status
         absl::strings
+        types
 )
 
 
@@ -19,7 +19,10 @@ target_include_directories(
 target_link_libraries(
     multicast_client
     PRIVATE 
+        absl::status
+        absl::strings
         client
+        types
 )
 
 
@@ -34,7 +37,10 @@ target_include_directories(
 target_link_libraries(
     tcp_client
     PRIVATE 
+        absl::status
+        absl::strings
         client
+        types
 )
 
 
@@ -44,6 +50,7 @@ target_link_libraries(
     INTERFACE
         client
         multicast_client
+        tcp_client
 )
 target_include_directories(
     clients
