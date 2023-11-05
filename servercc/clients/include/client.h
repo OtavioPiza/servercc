@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 
-#include "../../servercc/types/types.h"
+#include "types.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"

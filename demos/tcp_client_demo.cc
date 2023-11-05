@@ -4,8 +4,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/status/internal/statusor_internal.h"
-#include "servercc/clients/clients.h"
-#include "servercc/types/types.h"
+#include "servercc.h"
 
 using namespace std;
 using ostp::servercc::handler_t;

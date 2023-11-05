@@ -4,29 +4,14 @@ set(CMAKE_CXX_STANDARD 17)
 
 project(servercc)
 
-# Create a library for the project.
-add_library(${PROJECT_NAME} INTERFACE)
 
-# Set the include directory.
-target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# # Add subdirectories.
+# Add subdirectories.
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/connector)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/distributed)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/clients clients)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/servers servers)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/types types)
 
-# Link libraries to the project.
-target_link_libraries(
-    ${PROJECT_NAME}
-    INTERFACE
-        # connector
-        # distributed
-        clients
-        servers
-        types
-)
 
 # Configure the abseil library.
 if (NOT TARGET absl AND NOT ABLS_ADDED)
@@ -55,6 +40,20 @@ if (NOT TARGET absl AND NOT ABLS_ADDED)
     add_subdirectory(${ABSL_DIR} ${CMAKE_CURRENT_BINARY_DIR}/abseil-cpp)
 endif()
 
+
+# Create a library for the project.
+add_library(${PROJECT_NAME} INTERFACE)
+target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(
+    ${PROJECT_NAME}
+    INTERFACE
+        # connector
+        # distributed
+        clients
+        servers
+        types
+)
+
 # Run enable testing if this is the top level project and build the executable main.cc
 if (${PROJECT_IS_TOP_LEVEL})
     message(STATUS "Enabling testing for ${PROJECT_NAME}")
@@ -67,8 +66,15 @@ if (${PROJECT_IS_TOP_LEVEL} AND BUILD_DEMOS)
     message(STATUS "Building demos for ${PROJECT_NAME}")
 
     add_executable(tcp_server_demo demos/tcp_server_demo.cc)
-    target_link_libraries(tcp_server_demo ${PROJECT_NAME})
+    target_link_libraries(
+        tcp_server_demo
+            ${PROJECT_NAME}
+    )
 
     add_executable(tcp_client_demo demos/tcp_client_demo.cc)
-    target_link_libraries(tcp_client_demo ${PROJECT_NAME})
+    target_link_libraries(
+        tcp_client_demo
+            ${PROJECT_NAME}
+    )
+
 endif()

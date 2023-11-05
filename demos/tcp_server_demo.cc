@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 
 #include "absl/strings/string_view.h"
-#include "servercc/servers/servers.h"
+#include "servercc.h"
 
 using namespace std;
 using ostp::servercc::handler_t;
