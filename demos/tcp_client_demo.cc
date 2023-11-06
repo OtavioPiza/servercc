@@ -15,7 +15,7 @@ using ostp::servercc::TcpClient;
 
 int main() {
     // Create a client to connect to the server on port 8080 locally.
-    TcpClient client("localhost", 8080);
+    TcpClient client("localhost", 7000);
     if (!client.openSocket().ok()) {
         cout << "Could not open socket." << endl;
         return 1;

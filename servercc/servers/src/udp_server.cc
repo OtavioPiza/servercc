@@ -8,17 +8,11 @@
 #include "absl/strings/string_view.h"
 #include "server.h"
 
-using ostp::servercc::handler_t;
-using ostp::servercc::Request;
-using ostp::servercc::Server;
-using ostp::servercc::UdpServer;
-using std::function;
-using std::string;
-using std::vector;
+namespace ostp::servercc {
 
-/// See tcp.h for documentation.
+// See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port, absl::string_view groupAddress,
-                     vector<absl::string_view> &interfaces, handler_t defaultProcessor)
+                     std::vector<absl::string_view> &interfaces, handler_t defaultProcessor)
     : Server(port, defaultProcessor), groupAddress(groupAddress) {
     // Setup hints for udp with multicast.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;
@@ -45,7 +39,7 @@ UdpServer::UdpServer(int16_t port, absl::string_view groupAddress,
     while (addr != NULL) {
         // Try to create a socket.
         int yes = 1;
-// Try to create a socket.
+        // Try to create a socket.
         if ((server_socket_fd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol)) <
             0) {
             perror("socket");
@@ -108,10 +102,10 @@ UdpServer::UdpServer(int16_t port, absl::string_view groupAddress,
     this->serverSocketFd = server_socket_fd;
 }
 
-/// See tcp.h for documentation.
+// See tcp.h for documentation.
 UdpServer::~UdpServer() { close(this->serverSocketFd); }
 
-/// See server.h for documentation.
+// See server.h for documentation.
 [[noreturn]] void UdpServer::run() {
     socklen_t addr_len = sizeof(struct sockaddr);
 
@@ -120,19 +114,22 @@ UdpServer::~UdpServer() { close(this->serverSocketFd); }
         std::unique_ptr<Request> request = std::make_unique<Request>();
         request->addr = {};
         request->fd = this->serverSocketFd;
-        int bytes_read = recvfrom(this->serverSocketFd, &request->message.header,
+        request->message = std::make_unique<Message>();
+        int bytes_read = recvfrom(this->serverSocketFd, &request->message->header,
                                   kMessageHeaderLength, 0, &request->addr, &addr_len);
         if (bytes_read < kMessageHeaderLength) {
             perror("recvfrom");
             continue;
         }
-        request->message.body.data.resize(request->message.header.length);
-        bytes_read = recvfrom(this->serverSocketFd, request->message.body.data.data(),
-                              request->message.header.length, 0, &request->addr, &addr_len);
-        if (bytes_read < request->message.header.length) {
+        request->message->body.data.resize(request->message->header.length);
+        bytes_read = recvfrom(this->serverSocketFd, request->message->body.data.data(),
+                              request->message->header.length, 0, &request->addr, &addr_len);
+        if (bytes_read < request->message->header.length) {
             perror("recvfrom");
             continue;
         }
         handleRequest(std::move(request));
     }
 }
+
+}  // namespace ostp::servercc

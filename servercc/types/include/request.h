@@ -19,7 +19,7 @@ struct Request {
     sockaddr addr;
 
     // The message header.
-    Message message;
+    std::unique_ptr<Message> message;
 };
 
 }  // namespace ostp::servercc

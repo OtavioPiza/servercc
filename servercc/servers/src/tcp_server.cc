@@ -5,14 +5,7 @@
 
 #include "absl/container/flat_hash_map.h"
 
-using ostp::servercc::handler_t;
-using ostp::servercc::kMessageHeaderLength;
-using ostp::servercc::protocol_t;
-using ostp::servercc::Request;
-using ostp::servercc::Server;
-using ostp::servercc::TcpServer;
-using std::function;
-using std::vector;
+namespace ostp::servercc {
 
 /// See tcp.h for documentation.
 TcpServer::TcpServer(int16_t port, handler_t defaultProcessor) : Server(port, defaultProcessor) {
@@ -105,20 +98,15 @@ TcpServer::~TcpServer() { close(serverSocketFd); }
         std::unique_ptr<Request> request = std::make_unique<Request>();
         request->fd = clientSocketFd;
         request->addr = clientAddr;
-        int bytesRead = recv(clientSocketFd, &request->message.header, kMessageHeaderLength, 0);
-        if (bytesRead < kMessageHeaderLength) {
-            perror("recv");
+        auto [status, message] = readMessage(clientSocketFd);
+        if (!status.ok()) {
+            perror("readMessage");
             close(clientSocketFd);
             continue;
         }
-        request->message.body.data.resize(request->message.header.length);
-        bytesRead = recv(clientSocketFd, request->message.body.data.data(),
-                         request->message.header.length, 0);
-        if (bytesRead < request->message.header.length) {
-            perror("recvfrom");
-            close(clientSocketFd);
-            continue;
-        }
+        request->message = std::move(message);
         handleRequest(std::move(request));
     }
 }
+
+} // namespace ostp::servercc

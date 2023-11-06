@@ -46,15 +46,15 @@ target_link_libraries(
 
 
 add_library(servers INTERFACE)
+target_include_directories(
+    servers
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
 target_link_libraries(
     servers
     INTERFACE
         server
         tcp_server
         udp_server
-)
-target_include_directories(
-    servers
-    INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}
 )

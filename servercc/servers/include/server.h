@@ -75,7 +75,7 @@ class Server {
     //     request: The request to handle.
     void handleRequest(std::unique_ptr<ostp::servercc::Request> request) {
         // Execute the handler for the protocol's request or the default handler.
-        ostp::servercc::handler_t handler = handlers[request->message.header.protocol];
+        ostp::servercc::handler_t handler = handlers[request->message->header.protocol];
         if (handler == nullptr) {
             handler = defaultHandler;
         }
