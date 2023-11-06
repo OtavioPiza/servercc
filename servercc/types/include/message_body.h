@@ -10,6 +10,7 @@ namespace ostp::servercc {
 
 // The body of a message consists of a unique pointer to a vector of bytes.
 struct MessageBody {
+    // The data of the message.
     std::vector<uint8_t> data;
 };
 

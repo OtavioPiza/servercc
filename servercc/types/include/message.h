@@ -9,8 +9,12 @@
 
 namespace ostp::servercc {
 
+// The message sent between the client and server.
 struct Message {
+    // The message header.
     MessageHeader header;
+
+    // The message body.
     MessageBody body;
 };
 

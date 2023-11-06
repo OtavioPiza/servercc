@@ -1,7 +1,6 @@
 #ifndef SERVERCC_SERVER_UDP_H
 #define SERVERCC_SERVER_UDP_H
 
-#include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -24,8 +23,7 @@ class UdpServer : virtual public Server {
     //     interfaces: The interfaces the server will listen on.
     //     default_processor: The default processor for the server.
     UdpServer(int16_t port, absl::string_view groupAddress,
-              std::vector<absl::string_view> &interfaces,
-              handler_t defaultHandler);
+              std::vector<absl::string_view> &interfaces, handler_t defaultHandler);
 
     // Destructor for the server.
     ~UdpServer();

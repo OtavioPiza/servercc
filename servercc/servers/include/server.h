@@ -1,13 +1,14 @@
 #ifndef SERVERCC_SERVER_H
 #define SERVERCC_SERVER_H
 
+#include <arpa/inet.h>
 #include <netdb.h>
 
 #include <functional>
 #include <memory>
 
-#include "absl/container/flat_hash_map.h"
 #include "../../servercc/types/types.h"
+#include "absl/container/flat_hash_map.h"
 
 namespace ostp::servercc {
 
@@ -92,6 +93,6 @@ class Server {
     [[noreturn]] virtual void run() = 0;
 };
 
-}  // namespace ostp::servercc::server
+}  // namespace ostp::servercc
 
 #endif
