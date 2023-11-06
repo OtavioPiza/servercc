@@ -1,12 +1,6 @@
 #ifndef SERVERCC_UDP_CLIENT_H
 #define SERVERCC_UDP_CLIENT_H
 
-#include <memory>
-
-#include "../../servercc/types/types.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "client.h"
 
 // A UDP client.

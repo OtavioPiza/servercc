@@ -7,8 +7,8 @@
 #include <functional>
 #include <memory>
 
-#include "../../servercc/types/types.h"
 #include "absl/container/flat_hash_map.h"
+#include "types.h"
 
 namespace ostp::servercc {
 

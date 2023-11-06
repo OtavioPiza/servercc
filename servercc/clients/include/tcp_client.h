@@ -1,12 +1,6 @@
 #ifndef SERVERCC_TCP_CLIENT_H
 #define SERVERCC_TCP_CLIENT_H
 
-#include <memory>
-
-#include "../../servercc/types/types.h"
-#include "absl/strings/string_view.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "client.h"
 
 namespace ostp::servercc {

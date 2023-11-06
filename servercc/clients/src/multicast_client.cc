@@ -1,13 +1,6 @@
 #include "multicast_client.h"
 
-#include <arpa/inet.h>
-#include <netdb.h>
-
-#include "client.h"
-
-using ostp::servercc::kMessageHeaderLength;
-using ostp::servercc::Message;
-using ostp::servercc::MulticastClient;
+namespace ostp::servercc {
 
 // See udp_client.h for documentation.
 MulticastClient::MulticastClient(const absl::string_view interface,
@@ -125,3 +118,5 @@ std::pair<absl::Status, std::unique_ptr<Message>> MulticastClient::receiveMessag
     }
     return { absl::OkStatus(), std::move(message) };
 }
+
+}  // namespace ostp::servercc

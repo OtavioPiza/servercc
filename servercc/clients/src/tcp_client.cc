@@ -1,14 +1,6 @@
 #include "tcp_client.h"
 
-#include <netdb.h>
-
-#include <vector>
-
-#include "client.h"
-
-using ostp::servercc::Client;
-using ostp::servercc::Message;
-using ostp::servercc::TcpClient;
+namespace ostp::servercc {
 
 // See tcp_client.h for documentation.
 TcpClient::TcpClient(const absl::string_view serverAddress, const uint16_t port)
@@ -146,3 +138,5 @@ std::pair<absl::Status, std::unique_ptr<Message>> TcpClient::receiveMessage() {
     // Return.
     return {absl::OkStatus(), std::move(message)};
 }
+
+}  // namespace ostp::servercc
