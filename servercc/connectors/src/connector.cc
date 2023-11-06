@@ -1,10 +1,6 @@
 #include "connector.h"
 
-using ostp::servercc::Connector;
-using ostp::servercc::handler_t;
-using ostp::servercc::Message;
-using ostp::servercc::protocol_t;
-using ostp::servercc::Request;
+namespace ostp::servercc {
 
 // Constructors.
 
@@ -94,3 +90,5 @@ absl::Status Connector::runClient(absl::string_view address) {
     clientThread.detach();
     return absl::OkStatus();
 }
+
+}  // namespace ostp::servercc
