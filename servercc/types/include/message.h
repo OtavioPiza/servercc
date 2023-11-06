@@ -1,6 +1,8 @@
 #ifndef SERVERCC_MESSAGE_H
 #define SERVERCC_MESSAGE_H
 
+#include <netdb.h>
+
 #include <memory>
 
 #include "absl/status/status.h"

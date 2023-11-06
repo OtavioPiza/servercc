@@ -2,8 +2,9 @@
 #define SERVERCC_CONNECTOR_H
 
 #include <functional>
-#include <string>
 #include <memory>
+#include <string>
+#include <thread>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
