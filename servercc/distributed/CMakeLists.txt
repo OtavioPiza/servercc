@@ -1,25 +1,28 @@
-add_library(distributed SHARED)
-
-# Library sources and headers.
-target_sources(
-    distributed 
-    PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/distributed.cc
-)
-
+add_library(distributed_server ${CMAKE_CURRENT_SOURCE_DIR}/src/distributed_server.cc)
 target_include_directories(
-    distributed
+    distributed_server
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+target_link_libraries(
+    distributed_server
+    PRIVATE
+        absl::flat_hash_map
+        absl::flat_hash_set
+        absl::status
+        absl::strings
+        clients
+        connectors
+        libcc
+        servers
+)
 
-# Link dependencies.
+
+add_library(distributed INTERFACE)
 target_link_libraries(
     distributed
-    PRIVATE
-        client
-        connector
-        server
+    INTERFACE
+        distributed_server
 )

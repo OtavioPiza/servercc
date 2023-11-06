@@ -6,8 +6,8 @@ namespace ostp::servercc {
 
 // See connector.h for documentation.
 Connector::Connector(handler_t defaultHandler,
-                     std::function<void(absl::string_view)> disconnectHandler)
-    : defaultHandler(defaultHandler), disconnectHandler(disconnectHandler) {}
+                     std::function<void(absl::string_view)> disconnectCallback)
+    : defaultHandler(defaultHandler), disconnectCallback(disconnectCallback) {}
 
 // See connector.h for documentation.
 Connector::~Connector() {}
@@ -66,7 +66,7 @@ absl::Status Connector::runClient(absl::string_view address) {
                     perror("Failed to close socket.");
                 }
                 clients.erase(address);
-                disconnectHandler(address);
+                disconnectCallback(address);
                 break;
             }
 

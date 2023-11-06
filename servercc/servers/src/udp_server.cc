@@ -4,7 +4,7 @@ namespace ostp::servercc {
 
 // See tcp.h for documentation.
 UdpServer::UdpServer(int16_t port, absl::string_view groupAddress,
-                     std::vector<absl::string_view> &interfaces, handler_t defaultProcessor)
+                     std::vector<absl::string_view> interfaces, handler_t defaultProcessor)
     : Server(port, defaultProcessor), groupAddress(groupAddress) {
     // Setup hints for udp with multicast.
     struct addrinfo *result = nullptr, *hints = new struct addrinfo;

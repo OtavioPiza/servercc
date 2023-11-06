@@ -24,7 +24,7 @@ class Connector {
     // Arguments:
     //     default_processor: The default processor to use.
     //     disconnect_handler: The handler to use when a client disconnects.
-    Connector(handler_t defaultHandler, std::function<void(absl::string_view)> disconnectHandler);
+    Connector(handler_t defaultHandler, std::function<void(absl::string_view)> disconnectCallback);
 
     // Destructor
     ~Connector();
@@ -64,7 +64,7 @@ class Connector {
     handler_t defaultHandler;
 
     // The handler to use when a client disconnects.
-    std::function<void(absl::string_view)> disconnectHandler;
+    std::function<void(absl::string_view)> disconnectCallback;
 
     // A map of the current TCP clients identified by their address.
     absl::flat_hash_map<absl::string_view, std::shared_ptr<TcpClient>> clients;

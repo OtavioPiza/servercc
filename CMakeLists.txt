@@ -1,12 +1,12 @@
 # Setup minimum required version of CMake and C++ standard.
 cmake_minimum_required(VERSION 3.18)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 project(servercc)
 
 
 # Add subdirectories.
-# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/distributed)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/distributed)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/clients clients)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/connectors connectors)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/servers servers)
