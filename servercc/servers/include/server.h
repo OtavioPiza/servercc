@@ -59,13 +59,37 @@ class Server {
 
     // Setters
 
-    // Sets the handler for the specified protocol.
+    // Adds a handler for the specified protocol.
+    //
+    // Arguments:
+    //     protocol: the protocol to add the handler for.
+    //     handler: the handler to add.
+    // Returns:
+    //     An error if the handler already exists for the protocol, otherwise ok.
+    absl::Status addHandler(ostp::servercc::protocol_t protocol,
+                            ostp::servercc::handler_t handler) {
+        if (handlers.contains(protocol)) {
+            return absl::AlreadyExistsError("Handler already exists for protocol.");
+        }
+        handlers.emplace(protocol, handler);
+        return absl::OkStatus();
+    }
+
+    // Updates the handler for the specified protocol.
     //
     // Arguments:
     //     protocol: the protocol to set the handler for.
     //     handler: the handler to set.
-    void setHandler(ostp::servercc::protocol_t protocol, ostp::servercc::handler_t handler) {
-        handlers[protocol] = handler;
+    // Returns:
+    //     An error if the handler does not exist for the protocol, otherwise ok.
+    absl::Status updateHandler(ostp::servercc::protocol_t protocol,
+                               ostp::servercc::handler_t handler) {
+        auto it = handlers.find(protocol);
+        if (it == handlers.end()) {
+            return absl::NotFoundError("Handler does not exist for protocol.");
+        }
+        it->second = handler;
+        return absl::OkStatus();
     }
 
     // Methods

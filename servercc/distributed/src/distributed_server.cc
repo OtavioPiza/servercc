@@ -2,13 +2,17 @@
 
 #include <arpa/inet.h>
 
+#include <iostream>
 #include <memory>
 #include <random>
 #include <thread>
 
-// Constructors.
+#include "absl/strings/str_cat.h"
 
 namespace ostp::servercc {
+
+using ostp::libcc::data_structures::MessageBuffer;
+using ostp::servercc::kMessageHeaderLength;
 
 // See distributed.h for documentation.
 DistributedServer::DistributedServer(
@@ -40,15 +44,26 @@ DistributedServer::DistributedServer(
       peerConnectCallback(peerConnectCallback),
       peerDisconnectCallback(peerDisconnectCallback) {
     // TODO define types and return stats from setting handlers.
+
     // Add the connect request handler to the UDP server.
-    udpServer.setHandler(0x10, [this](std::unique_ptr<Request> request) {
-        this->handleConnect(std::move(request));
-    });
+    if (!udpServer
+             .addHandler(0x10,
+                         [this](std::unique_ptr<Request> request) {
+                             this->handleConnect(std::move(request));
+                         })
+             .ok()) {
+        throw std::runtime_error("Failed to add connect request handler to UDP server.");
+    }
 
     // Add the connect_ack request handler to the TCP server.
-    tcpServer.setHandler(0x11, [this](std::unique_ptr<Request> request) {
-        this->handleConnectAck(std::move(request));
-    });
+    if (!tcpServer
+             .addHandler(0x11,
+                         [this](std::unique_ptr<Request> request) {
+                             this->handleConnectAck(std::move(request));
+                         })
+             .ok()) {
+        throw std::runtime_error("Failed to add connect_ack request handler to TCP server.");
+    }
 
     // Add the internal request handler to the connector.
     if (!connector
@@ -70,232 +85,236 @@ DistributedServer::DistributedServer(
         throw std::runtime_error("Failed to add internal response handler to connector.");
     }
 
-    //     // Add the internal response end handler to the connector.
-    //     connector.add_processor(
-    //         SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_RESPONSE_END,
-    //         [this](const Request request) { this->handle_internal_response_end(request);
-    //         });
-};
+    // Add the internal response end handler to the connector.
+    if (!connector
+             .addHandler(0x14,
+                         [this](std::unique_ptr<Request> request) {
+                             this->handleInternalResponseEnd(std::move(request));
+                         })
+             .ok()) {
+        throw std::runtime_error("Failed to add internal response end handler to connector.");
+    }
+}
+
+// See distributed.h for documentation.
+absl::Status DistributedServer::run() {
+    // Run the services.
+    absl::Status status;
+    if (!(status = runTcpServer()).ok()) {
+        return status;
+    }
+    if (!(status = runUdpServer()).ok()) {
+        return status;
+    }
+    runLoggerService();
+
+    // TODO make this configurable.
+    // Try to connect to the multicast group.
+    int retries = 5;
+    while (true) {
+        // Send the connect message.
+        const auto result = sendConnectMessage();
+        if (!result.ok()) {
+            // TODO log
+
+        } else {
+            return absl::OkStatus();
+        }
+    }
+    return absl::InternalError("Failed to connect to multicast group.");
+}
+
+// See distributed.h for documentation.
+absl::Status DistributedServer::addHandler(protocol_t protocol, handler_t handler) {
+    // Check if the protocol is already registered.
+    if (handlers.contains(protocol)) {
+        return absl::AlreadyExistsError("Handler already exists for protocol.");
+    }
+    handlers.insert({protocol, handler});
+    return absl::OkStatus();
+}
+
+// See distributed.h for documentation.
+absl::Status DistributedServer::multicastMessage(const Message &message) {
+    if (!multicastClient.isOpen() && !multicastClient.openSocket().ok()) {
+        return absl::InternalError("Failed to open socket.");
+    }
+    return std::move(multicastClient.sendMessage(message));
+}
+
+// See distributed.h for documentation.
+absl::Status DistributedServer::sendConnectMessage() {
+    Message message;
+    message.header.protocol = 0x10;
+    message.header.length = sizeof(uint16_t);
+    message.body.data.resize(message.header.length);
+    memcpy(message.body.data.data(), &port, message.header.length);
+    return multicastMessage(message);
+}
+
+// See distributed.h for documentation.
+std::pair<absl::Status, uint32_t> DistributedServer::sendMessage(absl::string_view address,
+                                                                 const Message &message) {
+    // Generate a new random request id.
+    uint32_t id;
+    while (messageBuffers.contains(id = std::rand()))
+        ;
+
+    // Add the ID to the message queue.
+    auto messageBuffer = std::make_shared<MessageBuffer<std::unique_ptr<Message>>>();
+    messageBuffers.insert({id, messageBuffer});
+
+    // Create a wrapper message.
+    Message request;
+    request.header.protocol = 0x12;
+    request.header.length = sizeof(uint32_t) + kMessageHeaderLength + message.header.length;
+    request.body.data.resize(request.header.length);
+
+    // Copy the message ID, message header, and message body into the wrapper message body.
+    memcpy(request.body.data.data(), &id, sizeof(uint32_t));
+    memcpy(request.body.data.data() + sizeof(uint32_t), &message.header, kMessageHeaderLength);
+    memcpy(request.body.data.data() + sizeof(uint32_t) + kMessageHeaderLength,
+           message.body.data.data(), message.header.length);
+
+    // Send the request to the peer.
+    const auto result = connector.sendMessage(address, request);
+    if (!result.ok()) {
+        // Remove the ID from the message queue.
+        messageBuffers.erase(id);
+        return {result, -1};
+    }
+
+    // Add the message ID to the peers_message_ids map.
+    messageIdsToPeers.insert({id, address});
+
+    // Add the message ID to the peers_message_ids map.
+    const auto messageIdsIt = peersToMessageIds.find(address);
+    if (messageIdsIt == peersToMessageIds.end()) {
+        peersToMessageIds.insert({address, {id}});
+    } else {
+        messageIdsIt->second.insert(id);
+    }
+
+    // Return the request id.
+    return {absl::OkStatus(), id};
+}
+
+// See distributed.h for documentation.
+std::pair<absl::Status, std::unique_ptr<Message>> DistributedServer::receiveMessage(
+    const uint32_t id) {
+    // Look for the message queue with the specified ID.
+    auto it = messageBuffers.find(id);
+    if (it == messageBuffers.end()) {
+        return {absl::NotFoundError("Invalid request ID."), nullptr};
+    }
+
+    // Get the message from the queue.
+    auto res = it->second->pop();
+
+    // If the is closed and empty, remove it from the messages_queues map.
+    if (it->second->is_closed() && it->second->empty()) {
+        // Erase the message queue.
+        messageBuffers.erase(it);
+
+        // Erase the message ID from the peers_to_message_ids and remove the peer if it is empty.
+        auto message_ids_it = peersToMessageIds.find(messageIdsToPeers[id]);
+        if (message_ids_it != peersToMessageIds.end()) {
+            message_ids_it->second.erase(id);
+            if (message_ids_it->second.empty()) {
+                peersToMessageIds.erase(message_ids_it);
+            }
+        }
+
+        // Erase the message ID from the message_ids_to_peers map.
+        messageIdsToPeers.erase(id);
+    }
+
+    // Return the message.
+    return std::move(res);
+}
+
+// See distributed.h for documentation.
+void DistributedServer::log(absl::Status status, absl::string_view message) {
+    // Add the log message to the queue and notify the logger service.
+    logQueue.push(std::make_pair(status, message));
+    logQueueSemaphore.release();
+}
+
+// See distributed.h for documentation.
+absl::Status DistributedServer::runTcpServer() {
+    // TODO Create setup phase to catch errors early
+    tcpServerThread = std::thread([this]() {
+        log(absl::OkStatus(), "Running TCP server.");
+        this->tcpServer.run();
+        log(absl::OkStatus(), "TCP server stopped.");
+    });
+    return absl::OkStatus();
+}
+
+// See distributed.h for documentation.
+absl::Status DistributedServer::runUdpServer() {
+    // TODO create setup phase to catch errors early
+    udpServerThread = std::thread([this]() {
+        log(absl::OkStatus(), "Running UDP server.");
+        this->udpServer.run();
+        log(absl::OkStatus(), "UDP server stopped.");
+    });
+    return absl::OkStatus();
+}
+
+// See distributed.h for documentation.
+void DistributedServer::runLoggerService() {
+    // Create a thread for the logger service.
+    loggerServiceThread = std::thread([&]() {
+        while (true) {
+            const string sender = "DistributedServerLoggerService";
+
+            // Wait for a log message and then log it depending on the log level.
+            logQueueSemaphore.acquire();
+            auto logMessage = logQueue.front();
+            logQueue.pop();
+
+            // Log the message.
+            if (logMessage.first.ok()) {
+                // Print in green if the log level is INFO.
+                std::cout << "\033[1;32m" << sender << ": " << logMessage.second << "\033[0m"
+                          << std::endl;
+            } else {
+                // Print in red if the log level is ERROR.
+                std::cout << "\033[1;31m" << sender << ": " << logMessage.second << "\033[0m"
+                          << std::endl;
+            }
+        }
+    });
+}
+
+// See distributed.h for documentation.
+void DistributedServer::onConnectorDisconnect(absl::string_view ip) {
+    log(absl::OkStatus(), absl::StrCat("Peer disconnected: ", ip));
+
+    // Look for pending messages from the disconnected peer.
+    auto messageIdsIt = peersToMessageIds.find(ip);
+    if (messageIdsIt != peersToMessageIds.end()) {
+        // Log an error.
+        log(absl::InternalError("Peer disconnected without sending a response."),
+            absl::StrCat("Peer disconnected without sending a response. Missing messages: ",
+                         messageIdsIt->second.size(), "."));
+
+        // Close the message queues of the pending messages remove the message IDs from the
+        // message_ids_to_peers map.
+        for (const auto id : messageIdsIt->second) {
+            messageBuffers[id]->close();
+        }
+    }
+
+    // Remove from the peers list.
+    peers.erase(ip);
+
+    // Call the user-specified disconnect callback.
+    if (peerDisconnectCallback) peerDisconnectCallback(ip, *this);
+}
 
 }  // namespace ostp::servercc
-
-// // Public methods.
-
-// // See distributed.h for documentation.
-// void DistributedServer::run() {
-//     // Run the services.
-//     run_tcpServer();
-//     run_udpServer();
-//     run_logger_service();
-
-//     // Try to connect to the multicast group.
-//     int retries = 5;
-//     while (true) {
-//         // Send the connect message.
-//         const StatusOr result = send_connect_message();
-//         if (result.failed()) {
-//             log(result.status, result.status_message);
-//         } else {
-//             return;
-//         }
-//     }
-
-//     // If we are out of retries, throw an exception.
-//     log(Status::ERROR, "Failed to connect to the multicast group. Out of retries.");
-//     throw std::runtime_error("Failed to connect to the multicast group. Out of retries.");
-// };
-
-// // See distributed.h for documentation.
-// StatusOr<void> DistributedServer::addHandler(const string &protocol,
-//                                               const function<void(const Request)> handler) {
-//     // Check if the protocol is already registered.
-//     if (protocol_processors.contains(protocol.c_str(), protocol.length())) {
-//         return StatusOr<void>(Status::ERROR, "Protocol already registered.");
-//     }
-
-//     // Add the protocol to the protocol processors.
-//     protocol_processors.insert(protocol.c_str(), protocol.length(), handler);
-//     return StatusOr<void>(Status::OK, "Protocol registered.");
-// }
-
-// // Utility methods.
-
-// // See distributed.h for documentation.
-// StatusOr<int> DistributedServer::multicast_message(const string &message) {
-//     // Open the multicast socket.
-//     const auto result = multicastClient.open_socket();
-//     if (result.failed()) {
-//         return StatusOr<int>(Status::ERROR, "Failed to open multicast socket.", -1);
-//     }
-
-//     // Send the message to the multicast group.
-//     return std::move(multicastClient.send_message(message));
-// }
-
-// // See distributed.h for documentation.
-// StatusOr<int> DistributedServer::send_connect_message() {
-//     return (multicast_message(SERVERCC_DISTRIBUTED_PROTOCOLS_CONNECT " " +
-//     std::to_string(port)));
-// }
-
-// // See distributed.h for documentation.
-// StatusOr<int> DistributedServer::send_message(const string &address, const string &message) {
-//     // Generate a new random request id.
-//     int id;
-//     while (message_buffers.contains(id = std::rand()))
-//         ;
-
-//     // Add the ID to the message queue.
-//     message_buffers.insert({id, std::make_shared<MessageBuffer>()});
-
-//     // Wrap the message in a request.
-//     const string request =
-//         SERVERCC_DISTRIBUTED_PROTOCOLS_INTERNAL_REQUEST " " + std::to_string(id) + "\r\n" +
-//         message;
-
-//     // Send the request to the peer.
-//     const StatusOr result = connector.send_message(address, request);
-//     if (result.failed()) {
-//         // Remove the ID from the message queue.
-//         message_buffers.erase(id);
-//         return StatusOr(result.status, std::move(result.status_message), -1);
-//     }
-
-//     // Add the message ID to the peers_message_ids map.
-//     message_ids_to_peers[id] = address;
-
-//     // Add the message ID to the peers_message_ids map.
-//     auto message_ids_it = peers_to_message_ids.find(address);
-//     if (message_ids_it == peers_to_message_ids.end()) {
-//         peers_to_message_ids.insert({address, {id}});
-//     } else {
-//         message_ids_it->second.insert(id);
-//     }
-
-//     // Return the request id.
-//     return StatusOr(Status::OK, "Message sent.", id);
-// }
-
-// // See distributed.h for documentation.
-// StatusOr<const string> DistributedServer::receive_message(int id) {
-//     // Look for the message queue with the specified ID.
-//     auto it = message_buffers.find(id);
-//     if (it == message_buffers.end()) {
-//         return StatusOr<const string>(Status::ERROR, "Invalid request ID.", "");
-//     }
-
-//     // Get the message from the queue.
-//     StatusOr<const string> message_res = it->second->pop();
-
-//     // If the is closed and empty, remove it from the messages_queues map.
-//     if (it->second->is_closed() && it->second->empty()) {
-//         // Erase the message queue.
-//         message_buffers.erase(it);
-
-//         // Erase the message ID from the peers_to_message_ids and remove the peer if it is empty.
-//         auto message_ids_it = peers_to_message_ids.find(message_ids_to_peers[id]);
-//         if (message_ids_it != peers_to_message_ids.end()) {
-//             message_ids_it->second.erase(id);
-//             if (message_ids_it->second.empty()) {
-//                 peers_to_message_ids.erase(message_ids_it);
-//             }
-//         }
-
-//         // Erase the message ID from the message_ids_to_peers map.
-//         message_ids_to_peers.erase(id);
-//     }
-
-//     // Return the message.
-//     return std::move(message_res);
-// }
-
-// // See distributed.h for documentation.
-// void DistributedServer::log(const Status status, const string message) {
-//     // Add the log message to the queue and notify the logger service.
-//     log_queue.push(std::make_pair(status, std::move(message)));
-//     log_queue_semaphore.release();
-// }
-
-// // Sever services.
-
-// // See distributed.h for documentation.
-// void DistributedServer::run_tcpServer() {
-//     tcpServer_thread = std::thread([this]() {
-//         log(Status::INFO, "Running TCP server.");
-//         this->tcpServer.run();
-//         log(Status::INFO, "TCP server stopped.");
-//     });
-// }
-
-// // See distributed.h for documentation.
-// void DistributedServer::run_udpServer() {
-//     udpServer_thread = std::thread([this]() {
-//         log(Status::INFO, "Running UDP server.");
-//         this->udpServer.run();
-//         log(Status::INFO, "UDP server stopped.");
-//     });
-// }
-
-// // See distributed.h for documentation.
-// void DistributedServer::run_logger_service() {
-//     // Create a thread for the logger service.
-//     logger_service_thread = std::thread([&]() {
-//         while (true) {
-//             const string sender = "DistributedServerLoggerService";
-
-//             // Wait for a log message and then log it depending on the log level.
-//             log_queue_semaphore.acquire();
-//             std::pair<const Status, const string> log_message = log_queue.front();
-//             log_queue.pop();
-
-//             // Log the message.
-//             switch (log_message.first) {
-//                 case Status::OK:
-//                     log_ok(log_message.second, sender);
-//                     break;
-
-//                 case Status::ERROR:
-//                     log_error(log_message.second, sender);
-//                     break;
-
-//                 case Status::WARNING:
-//                     log_warn(log_message.second, sender);
-//                     break;
-
-//                 default:
-//                     log_info(log_message.second, sender);
-//                     break;
-//             }
-//         }
-//     });
-// }
-
-// // Callbacks.
-
-// // See distributed.h for documentation.
-// void DistributedServer::on_connector_disconnect(const string &ip) {
-//     log(Status::INFO, "Peer disconnected: " + ip + ".");
-
-//     // Look for pending messages from the disconnected peer.
-//     auto message_ids_it = peers_to_message_ids.find(ip);
-//     if (message_ids_it != peers_to_message_ids.end()) {
-//         // Log an error.
-//         log(Status::ERROR, "Peer disconnected without sending a response. Missing messages: " +
-//                                std::to_string(message_ids_it->second.size()) + ".");
-
-//         // Close the message queues of the pending messages remove the message IDs from the
-//         // message_ids_to_peers map.
-//         for (const int id : message_ids_it->second) {
-//             message_buffers[id]->close();
-//         }
-//     }
-
-//     // Remove from the peers list.
-//     peers.erase(ip);
-
-//     // Call the user-specified disconnect callback.
-//     if (peerDisconnectCallback) peerDisconnectCallback(ip, *this);
-// }
 
 // // Handlers.
 

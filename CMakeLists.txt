@@ -14,8 +14,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/types types)
 
 
 # Configure the abseil library.
-if (NOT TARGET absl AND NOT ABLS_ADDED)
-    set(ABSL_PROPAGATE_CXX_STD ON)
+if (NOT TARGET absl AND NOT ABSL_ADDED)
+    SET(ABSL_ADDED TRUE)
 
     # If a user has not specified a directory for abseil, then clone it from GitHub into lib/abseil-cpp.
     if (NOT DEFINED ABSL_DIR)
@@ -75,7 +75,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
 target_link_libraries(
     ${PROJECT_NAME}
     INTERFACE
-        # distributed
+        distributed
         clients
         connectors
         servers

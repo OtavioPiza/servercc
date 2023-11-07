@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 
+#include <optional>
 #include <queue>
 #include <semaphore>
 #include <string>
@@ -48,7 +49,7 @@ class DistributedServer {
     // Arguments:
     //     interfaceName: The name of the interface to use for the distributed server.
     //     group: The group ip address.
-    //     intefaces: The interface ip address.
+    //     interfaces: The interface ip address.
     //     port: The port to use for the distributed server.
     //     default_handler: The default handler to use for the distributed server.
     //     peer_connect_callback: The callback to call when a peer connects.
@@ -63,7 +64,7 @@ class DistributedServer {
     // Methods
 
     // Method to run the distributed server.
-    void run();
+    absl::Status run();
 
     // Method to add a new handler for the specified protocol.
     //
@@ -100,7 +101,8 @@ class DistributedServer {
     //
     // Returns:
     //     The ID of the message or an error.
-    std::pair<absl::Status, int> sendMessage(absl::string_view address, const Message &message);
+    std::pair<absl::Status, uint32_t> sendMessage(absl::string_view address,
+                                                  const Message &message);
 
     // Method to wait for a response to a message.
     //
@@ -109,7 +111,7 @@ class DistributedServer {
     //
     // Returns:
     //     The next segment of the response or an error.
-    std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage(const int id);
+    std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage(const uint32_t id);
 
     // Method to log a message.
     //
@@ -119,7 +121,7 @@ class DistributedServer {
     //
     // Returns:
     //     The status of the operation.
-    absl::Status log(absl::Status status, absl::string_view message);
+    void log(absl::Status status, absl::string_view message);
 
    private:
     // Server components.
@@ -155,7 +157,7 @@ class DistributedServer {
     // Handling datastructures.
 
     // The map of protocol handlers.
-    absl::flat_hash_map<protocol_t, handler_t> protocolHandlers;
+    absl::flat_hash_map<protocol_t, handler_t> handlers;
 
     // The default handler to use for the distributed server if no handler is found for a
     // protocol.
@@ -163,7 +165,9 @@ class DistributedServer {
 
     // Maps a message ID to a semaphore to wait for a response and a queue to store the
     // response.
-    absl::flat_hash_map<int, std::shared_ptr<ostp::libcc::data_structures::MessageBuffer>>
+    absl::flat_hash_map<
+        uint32_t,
+        std::shared_ptr<ostp::libcc::data_structures::MessageBuffer<std::unique_ptr<Message>>>>
         messageBuffers;
 
     // Maps a peer IP to a set of message IDs that have been sent to it.
@@ -191,10 +195,10 @@ class DistributedServer {
     // Server service methods.
 
     // Method to run the TCP server.
-    void runTcpServer();
+    absl::Status runTcpServer();
 
     // Method to run the UDP server.
-    void runUdpServer();
+    absl::Status runUdpServer();
 
     // Waits for a log message to be added to the log queue and prints it indefinitely.
     void runLoggerService();
