@@ -9,9 +9,12 @@ target_include_directories(
 target_link_libraries(
     distributed_server
     PRIVATE
-        absl::log
         absl::flat_hash_map
         absl::flat_hash_set
+        absl::log
+        absl::log_globals
+        absl::log_initialize
+        absl::log_severity
         absl::status
         absl::strings
         clients

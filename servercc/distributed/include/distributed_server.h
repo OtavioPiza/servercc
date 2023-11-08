@@ -136,9 +136,6 @@ class DistributedServer {
     // The thread to run the UDP server.
     std::thread udpServerThread;
 
-    // The thread to run the logger service.
-    std::thread loggerServiceThread;
-
     // Peer server datastructures.
 
     // The list of peers connected to the distributed server.
@@ -174,14 +171,6 @@ class DistributedServer {
     // The callback to call when a peer disconnects.
     const std::function<void(absl::string_view, DistributedServer &server)> peerDisconnectCallback;
 
-    // Logging datastructures.
-
-    // The semaphore to protect the log queue.
-    std::binary_semaphore logQueueSemaphore;
-
-    // The queue of log messages.
-    std::queue<std::pair<absl::Status, absl::string_view>> logQueue;
-
     // Server service methods.
 
     // Method to run the TCP server.
@@ -189,9 +178,6 @@ class DistributedServer {
 
     // Method to run the UDP server.
     absl::Status runUdpServer();
-
-    // Waits for a log message to be added to the log queue and prints it indefinitely.
-    void runLoggerService();
 
     // Internal callback methods.
 

@@ -7,8 +7,10 @@
 #include <random>
 #include <thread>
 
+#include "absl/base/log_severity.h"
+#include "absl/log/globals.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 
 namespace ostp::servercc {
 
@@ -86,59 +88,48 @@ DistributedServer::DistributedServer(
           [this](absl::string_view peerIp) { this->onConnectorDisconnect(peerIp); }),
       multicastClient(interfaceName, group, port, 1),  // TODO: Make TTL configurable.
       defaultHandler(defaultHandler),
-      logQueueSemaphore(0),
       peerConnectCallback(peerConnectCallback),
       peerDisconnectCallback(peerDisconnectCallback) {
-    // TODO define types and return stats from setting handlers.
+    absl::SetStderrThreshold(absl::LogSeverity::kInfo);  // TODO write to file instead of stderr.
+    absl::InitializeLog();
 
+    // TODO define types and return stats from setting handlers.
     // Add the connect request handler to the UDP server.
-    if (!udpServer
-             .addHandler(0x10,
-                         [this](std::unique_ptr<Request> request) {
-                             this->handleConnect(std::move(request));
-                         })
-             .ok()) {
-        throw std::runtime_error("Failed to add connect request handler to UDP server.");
+    absl::Status status;
+    if (!(status = udpServer.addHandler(0x10, [this](std::unique_ptr<Request> request) {
+             this->handleConnect(std::move(request));
+         })).ok()) {
+        LOG(FATAL) << "Failed to add connect request handler to UDP server: " << status.message();
     }
 
     // Add the connectAck request handler to the TCP server.
-    if (!tcpServer
-             .addHandler(0x11,
-                         [this](std::unique_ptr<Request> request) {
-                             this->handleConnectAck(std::move(request));
-                         })
-             .ok()) {
-        throw std::runtime_error("Failed to add connectAck request handler to TCP server.");
+    if (!(status = tcpServer.addHandler(0x11, [this](std::unique_ptr<Request> request) {
+             this->handleConnectAck(std::move(request));
+         })).ok()) {
+        LOG(FATAL) << "Failed to add connectAck request handler to TCP server: "
+                   << status.message();
     }
 
     // Add the internal request handler to the connector.
-    if (!connector
-             .addHandler(0x12,
-                         [this](std::unique_ptr<Request> request) {
-                             this->handleInternalRequest(std::move(request));
-                         })
-             .ok()) {
-        throw std::runtime_error("Failed to add internal request handler to connector.");
+    if (!(status = connector.addHandler(0x12, [this](std::unique_ptr<Request> request) {
+             this->handleInternalRequest(std::move(request));
+         })).ok()) {
+        LOG(FATAL) << "Failed to add internal request handler to connector: " << status.message();
     }
 
     // Add the internal response handler to the connector.
-    if (!connector
-             .addHandler(0x13,
-                         [this](std::unique_ptr<Request> request) {
-                             this->handleInternalResponse(std::move(request));
-                         })
-             .ok()) {
-        throw std::runtime_error("Failed to add internal response handler to connector.");
+    if (!(status = connector.addHandler(0x13, [this](std::unique_ptr<Request> request) {
+             this->handleInternalResponse(std::move(request));
+         })).ok()) {
+        LOG(FATAL) << "Failed to add internal response handler to connector: " << status.message();
     }
 
     // Add the internal response end handler to the connector.
-    if (!connector
-             .addHandler(0x14,
-                         [this](std::unique_ptr<Request> request) {
-                             this->handleInternalResponseEnd(std::move(request));
-                         })
-             .ok()) {
-        throw std::runtime_error("Failed to add internal response end handler to connector.");
+    if (!(status = connector.addHandler(0x14, [this](std::unique_ptr<Request> request) {
+             this->handleInternalResponseEnd(std::move(request));
+         })).ok()) {
+        LOG(FATAL) << "Failed to add internal response end handler to connector: "
+                   << status.message();
     }
 }
 
@@ -147,12 +138,13 @@ absl::Status DistributedServer::run() {
     // Run the services.
     absl::Status status;
     if (!(status = runTcpServer()).ok()) {
+        LOG(ERROR) << "Failed to run TCP server: " << status.message();
         return status;
     }
     if (!(status = runUdpServer()).ok()) {
+        LOG(ERROR) << "Failed to run UDP server: " << status.message();
         return status;
     }
-    runLoggerService();
 
     // TODO make this configurable.
     // Try to connect to the multicast group.
@@ -286,32 +278,6 @@ absl::Status DistributedServer::runUdpServer() {
         this->udpServer.run();
     });
     return absl::OkStatus();
-}
-
-// See distributed.h for documentation.
-void DistributedServer::runLoggerService() {
-    // Create a thread for the logger service.
-    loggerServiceThread = std::thread([&]() {
-        while (true) {
-            const string sender = "DistributedServerLoggerService";
-
-            // Wait for a log message and then log it depending on the log level.
-            logQueueSemaphore.acquire();
-            auto logMessage = logQueue.front();
-            logQueue.pop();
-
-            // Log the message.
-            if (logMessage.first.ok()) {
-                // Print in green if the log level is INFO.
-                std::cout << "\033[1;32m" << sender << ": " << logMessage.second << "\033[0m"
-                          << std::endl;
-            } else {
-                // Print in red if the log level is ERROR.
-                std::cout << "\033[1;31m" << sender << ": " << logMessage.second << "\033[0m"
-                          << std::endl;
-            }
-        }
-    });
 }
 
 // See distributed.h for documentation.
