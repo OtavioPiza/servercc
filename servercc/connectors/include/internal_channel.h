@@ -12,12 +12,13 @@ namespace ostp::servercc {
 typedef uint32_t channel_id_t;
 
 // Allows internal communication between servercc processes with multiplexing.
+template <int Protocol, int MaxSize>
 class InternalChannel {
     friend class InternalChannelManager;
 
    public:
     // Opens a new channel with the specified ID and write file descriptor.
-    InternalChannel(channel_id_t id, int writeFd);
+    InternalChannel(channel_id_t id, int writeFd) : channel_id_t(id), writeFd(writeFd) {}
 
     // Sends a message through closing the channel.
     ~InternalChannel();

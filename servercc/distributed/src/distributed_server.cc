@@ -19,46 +19,7 @@ using ostp::servercc::kMessageHeaderLength;
 
 namespace {
 
-// Create a wrapped message with the message ID and append the header and message buffer ID to
-// the body as follows:
-//
-// | New header | Original body | Original header | Message buffer ID |
-//
-// This reduces the number of copies required to send the message.
-std::unique_ptr<Message> wrapMessage(protocol_t newProtocol, uint32_t id,
-                                     std::unique_ptr<Message> message) {
-    auto offset = message->header.length;
-    message->body.data.resize(message->header.length + kMessageHeaderLength + sizeof(uint32_t));
 
-    // Copy the original message header.
-    memcpy(message->body.data.data() + offset, &message->header, kMessageHeaderLength);
-    offset += kMessageHeaderLength;
-
-    // Copy the message ID.
-    memcpy(message->body.data.data() + offset, &id, sizeof(uint32_t));
-
-    // Update the message header.
-    message->header.protocol = newProtocol;
-    message->header.length += kMessageHeaderLength + sizeof(uint32_t);
-
-    return std::move(message);
-}
-
-// Unwraps a message with a new protocol and message ID.
-std::pair<uint32_t, std::unique_ptr<Message>> unwrapMessage(std::unique_ptr<Message> message) {
-    auto offset = message->header.length - sizeof(uint32_t);
-
-    // Copy the message ID.
-    uint32_t id;
-    memcpy(&id, message->body.data.data() + offset, sizeof(uint32_t));
-    offset -= kMessageHeaderLength;
-
-    // Copy the original message header.
-    memcpy(&message->header, message->body.data.data() + offset, kMessageHeaderLength);
-    message->body.data.erase(message->body.data.begin() + offset, message->body.data.end());
-
-    return {id, std::move(message)};
-}
 
 }  // namespace
 
