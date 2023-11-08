@@ -101,7 +101,7 @@ class DistributedServer {
     //
     // Returns:
     //     The ID of the message or an error.
-    std::pair<absl::Status, uint32_t> sendMessage(absl::string_view address,
+    std::pair<absl::Status, uint32_t> sendInternalRequest(absl::string_view address,
                                                   std::unique_ptr<Message> message);
 
     // Method to wait for a response to a message.
@@ -111,7 +111,7 @@ class DistributedServer {
     //
     // Returns:
     //     The next segment of the response or an error.
-    std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage(const uint32_t id);
+    std::pair<absl::Status, std::unique_ptr<Message>> receiveInternalMessage(const uint32_t id);
 
    private:
     // Server components.

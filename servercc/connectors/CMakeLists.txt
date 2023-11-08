@@ -16,6 +16,26 @@ target_link_libraries(
         types
 )
 
+add_library(internal_channel ${CMAKE_CURRENT_SOURCE_DIR}/src/internal_channel.cc)
+target_include_directories(
+    internal_channel
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(
+    internal_channel
+    PRIVATE 
+        absl::flat_hash_map
+        absl::status
+        absl::strings
+        clients
+        types
+    PUBLIC
+        libcc
+)
+
 
 add_library(connectors INTERFACE)
 target_include_directories(

@@ -191,8 +191,8 @@ absl::Status DistributedServer::sendConnectMessage() {
 }
 
 // See distributed.h for documentation.
-std::pair<absl::Status, uint32_t> DistributedServer::sendMessage(absl::string_view address,
-                                                                 std::unique_ptr<Message> message) {
+std::pair<absl::Status, uint32_t> DistributedServer::sendInternalRequest(
+    absl::string_view address, std::unique_ptr<Message> message) {
     // Generate a new random request id.
     uint32_t id;
     while (messageBuffers.contains(id = std::rand()))
@@ -227,7 +227,7 @@ std::pair<absl::Status, uint32_t> DistributedServer::sendMessage(absl::string_vi
 }
 
 // See distributed.h for documentation.
-std::pair<absl::Status, std::unique_ptr<Message>> DistributedServer::receiveMessage(
+std::pair<absl::Status, std::unique_ptr<Message>> DistributedServer::receiveInternalMessage(
     const uint32_t id) {
     // Look for the message queue with the specified ID.
     auto it = messageBuffers.find(id);
