@@ -114,7 +114,7 @@ class Client {
     // Returns:
     //     A status indicating whether the message was sent successfully and the
     //     number of bytes sent.
-    virtual absl::Status sendMessage(const Message& message) = 0;
+    virtual absl::Status sendMessage(std::unique_ptr<Message> message) = 0;
 
     // Blocks until a message is received from the server.
     //

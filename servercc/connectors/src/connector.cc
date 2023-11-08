@@ -29,18 +29,19 @@ absl::Status Connector::addClient(std::unique_ptr<TcpClient> client) {
     if (!client->isOpen() && !client->openSocket().ok()) {
         return absl::InternalError("Failed to open socket.");
     }
+    auto address = client->getAddress();
     clients.emplace(client->getAddress(), std::move(client));
-    return runClient(client->getAddress());
+    return runClient(address);
 }
 
 // See connector.h for documentation.
-absl::Status Connector::sendMessage(absl::string_view address, const Message& message) {
+absl::Status Connector::sendMessage(absl::string_view address, std::unique_ptr<Message> message) {
     // Check if the client exists.
     auto client = clients.find(address);
     if (client == clients.end()) {
         return absl::NotFoundError("Client does not exist.");
     }
-    return client->second->sendMessage(message);
+    return client->second->sendMessage(std::move(message));
 }
 
 // Private methods.

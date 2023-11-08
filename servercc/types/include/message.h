@@ -23,6 +23,9 @@ struct Message {
 // Reads a message from the specified file descriptor.
 std::pair<absl::Status, std::unique_ptr<Message>> readMessage(int);
 
+// Writes a message to the specified file descriptor.
+absl::Status writeMessage(int, std::unique_ptr<Message>);
+
 }  // namespace ostp::servercc
 
 #endif

@@ -32,15 +32,15 @@ int main() {
         vector<uint8_t> bytes(line.begin(), line.end());
 
         // Create a message to send to the server.
-        Message message;
-        message.header.length = bytes.size();
-        message.header.protocol = protocol;
-        message.body.data = move(bytes);
+        auto message = make_unique<Message>();
+        message->header.length = bytes.size();
+        message->header.protocol = protocol;
+        message->body.data = move(bytes);
 
-        cout << "Sending " << message.header.length << " bytes to server." << endl;
+        cout << "Sending " << message->header.length << " bytes to server." << endl;
 
         // Send the message.
-        if (!client.sendMessage(message).ok()) {
+        if (!client.sendMessage(std::move(message)).ok()) {
             cout << "Could not send message." << endl;
             return 1;
         }

@@ -85,7 +85,7 @@ class DistributedServer {
     //
     // Returns:
     //     The number of bytes sent or an error.
-    absl::Status multicastMessage(const Message &message);
+    absl::Status multicastMessage(std::unique_ptr<Message> message);
 
     // Method to send a multicast a connect request to all the servers.
     //
@@ -102,7 +102,7 @@ class DistributedServer {
     // Returns:
     //     The ID of the message or an error.
     std::pair<absl::Status, uint32_t> sendMessage(absl::string_view address,
-                                                  const Message &message);
+                                                  std::unique_ptr<Message> message);
 
     // Method to wait for a response to a message.
     //
@@ -112,16 +112,6 @@ class DistributedServer {
     // Returns:
     //     The next segment of the response or an error.
     std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage(const uint32_t id);
-
-    // Method to log a message.
-    //
-    // Arguments:
-    //     status: The status of the message.
-    //     message: The message to log.
-    //
-    // Returns:
-    //     The status of the operation.
-    void log(absl::Status status, absl::string_view message);
 
    private:
     // Server components.

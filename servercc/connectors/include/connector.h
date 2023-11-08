@@ -54,7 +54,7 @@ class Connector {
     //
     // Returns:
     //     The number of bytes sent if successful, otherwise an error.
-    absl::Status sendMessage(absl::string_view address, const Message& message);
+    absl::Status sendMessage(absl::string_view address, std::unique_ptr<Message> message);
 
    private:
     // The map of protocol handlers.

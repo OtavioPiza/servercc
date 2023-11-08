@@ -9,14 +9,16 @@ target_include_directories(
 target_link_libraries(
     distributed_server
     PRIVATE
+        absl::log
         absl::flat_hash_map
         absl::flat_hash_set
         absl::status
         absl::strings
         clients
         connectors
-        libcc
         servers
+    PUBLIC
+        libcc
 )
 
 
