@@ -32,9 +32,10 @@ absl::Status writeMessage(int, std::unique_ptr<Message>);
 // | New header | Original body | Original header | value |
 //
 // This reduces the number of copies required to send the message.
-template <typename T>
-std::unique_ptr<Message> wrapMessage(protocol_t newProtocol, T& value,
-                                     std::unique_ptr<Message> message) {
+//
+// Note that the type of the value must be copyable.
+template <typename T, protocol_t Protocol>
+std::unique_ptr<Message> wrapMessage(const T& value, std::unique_ptr<Message> message) {
     message->body.data.resize(message->header.length + kMessageHeaderLength + sizeof(T));
 
     // Copy the original message header.
@@ -46,19 +47,19 @@ std::unique_ptr<Message> wrapMessage(protocol_t newProtocol, T& value,
     offset += kMessageHeaderLength;
 
     // Update the header.
-    message->header.protocol = newProtocol;
+    message->header.protocol = Protocol;
     message->header.length = offset + sizeof(T);
 
     // Return the message.
     return std::move(message);
 }
 
-// Unwraps a message with a new protocol and message ID.
+// Unwraps a message.
 template <typename T>
 std::tuple<absl::Status, std::unique_ptr<T>, std::unique_ptr<Message>> unwrapMessage(
     std::unique_ptr<Message> message) {
     // Check length.
-    if (message->body.length < sizeof(T) + kMessageHeaderLength) {
+    if (message->header.length < sizeof(T) + kMessageHeaderLength) {
         return {absl::InvalidArgumentError("Invalid message length"), nullptr, nullptr};
     }
 

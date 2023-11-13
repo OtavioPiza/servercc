@@ -102,7 +102,7 @@ class DistributedServer {
     // Returns:
     //     The ID of the message or an error.
     std::pair<absl::Status, uint32_t> sendInternalRequest(absl::string_view address,
-                                                  std::unique_ptr<Message> message);
+                                                          std::unique_ptr<Message> message);
 
     // Method to wait for a response to a message.
     //
@@ -149,19 +149,6 @@ class DistributedServer {
     // The default handler to use for the distributed server if no handler is found for a
     // protocol.
     handler_t defaultHandler;
-
-    // Maps a message ID to a semaphore to wait for a response and a queue to store the
-    // response.
-    absl::flat_hash_map<
-        uint32_t,
-        std::shared_ptr<ostp::libcc::data_structures::MessageBuffer<std::unique_ptr<Message>>>>
-        messageBuffers;
-
-    // Maps a peer IP to a set of message IDs that have been sent to it.
-    absl::flat_hash_map<absl::string_view, absl::flat_hash_set<int>> peersToMessageIds;
-
-    // Maps a message ID to the peer IP that it was sent to.
-    absl::flat_hash_map<int, absl::string_view> messageIdsToPeers;
 
     // Callbacks.
 

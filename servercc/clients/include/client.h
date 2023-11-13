@@ -92,6 +92,14 @@ class Client {
     //     A shared pointer to the client's addr.
     virtual sockaddr getClientAddr() { return clientAddr; }
 
+    // Gets the client's internet address.
+    //
+    // Returns:
+    //     The client's internet address.
+    virtual in_addr_t getClientInAddr() {
+        return ((sockaddr_in *)&clientAddr)->sin_addr.s_addr;
+    }
+
     // Virtual Methods
 
     // Opens the client's socket.

@@ -1,6 +1,7 @@
 #ifndef SERVERCC_MESSAGE_HEADER_H
 #define SERVERCC_MESSAGE_HEADER_H
 
+#include "protocols.h"
 #include <inttypes.h>
 
 namespace ostp::servercc {
@@ -16,20 +17,15 @@ namespace ostp::servercc {
 // a struct packed with a length of 8 bytes.
 struct MessageHeader {
     // The length of the data in the message.
-    uint32_t length;
+    u_int32_t length;
 
     // The protocol of the message.
-    uint32_t protocol;
+    protocol_t protocol;
 } __attribute__((packed));
 
 // The length of the message header.
 constexpr uint32_t kMessageHeaderLength = sizeof(MessageHeader);
 
-// The type of the message protocol.
-typedef decltype(MessageHeader::protocol) protocol_t;
-
-// The type of the message length.
-typedef decltype(MessageHeader::length) length_t;
 
 }  // namespace ostp::servercc
 

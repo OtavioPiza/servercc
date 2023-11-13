@@ -3,13 +3,15 @@
 
 #include <functional>
 #include <memory>
-#include <string>
 #include <thread>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "clients.h"
+#include "connector_types.h"
+#include "internal_channel_manager.h"
+#include "internal_request.h"
 #include "types.h"
 
 namespace ostp::servercc {
@@ -24,7 +26,7 @@ class Connector {
     // Arguments:
     //     default_processor: The default processor to use.
     //     disconnect_handler: The handler to use when a client disconnects.
-    Connector(handler_t defaultHandler, std::function<void(absl::string_view)> disconnectCallback);
+    Connector(handler_t defaultHandler, std::function<void(in_addr_t)> disconnectCallback);
 
     // Destructor
     ~Connector();
@@ -54,9 +56,17 @@ class Connector {
     //
     // Returns:
     //     The number of bytes sent if successful, otherwise an error.
-    absl::Status sendMessage(absl::string_view address, std::unique_ptr<Message> message);
+    std::pair<absl::Status, std::shared_ptr<connector_channel_manager_t::request_channel_t>>
+    sendRequest(in_addr_t address, std::unique_ptr<Message> message);
 
    private:
+    // Represents an internal client with a channel manager and write mutex.
+    struct InternalClient {
+        std::shared_ptr<TcpClient> client;
+        std::shared_ptr<connector_channel_manager_t> channelManager;
+        std::shared_ptr<std::mutex> writeMutex;
+    };
+
     // The map of protocol handlers.
     absl::flat_hash_map<protocol_t, handler_t> handlers;
 
@@ -64,16 +74,22 @@ class Connector {
     handler_t defaultHandler;
 
     // The handler to use when a client disconnects.
-    std::function<void(absl::string_view)> disconnectCallback;
+    std::function<void(in_addr_t)> disconnectCallback;
 
     // A map of the current TCP clients identified by their address.
-    absl::flat_hash_map<absl::string_view, std::shared_ptr<TcpClient>> clients;
+    absl::flat_hash_map<in_addr_t, InternalClient> clients;
 
     // Runs the specified client in a thread.
     //
     // Arguments:
     //     client: The client to run.
-    absl::Status runClient(absl::string_view address);
+    absl::Status runClient(in_addr_t address);
+
+    // The mutex protecting the clients map.
+    std::mutex clientsMutex;
+
+    // The mutex protecting the handlers map.
+    std::mutex handlersMutex;
 };
 
 }  // namespace ostp::servercc

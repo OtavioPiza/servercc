@@ -11,17 +11,14 @@
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
+#include "internal_channel_manager.h"
 
 namespace ostp::servercc {
 
 using ostp::libcc::data_structures::MessageBuffer;
 using ostp::servercc::kMessageHeaderLength;
 
-namespace {
-
-
-
-}  // namespace
+namespace {}  // namespace
 
 // See distributed.h for documentation.
 DistributedServer::DistributedServer(
@@ -152,74 +149,12 @@ absl::Status DistributedServer::sendConnectMessage() {
 }
 
 // See distributed.h for documentation.
-std::pair<absl::Status, uint32_t> DistributedServer::sendInternalRequest(
-    absl::string_view address, std::unique_ptr<Message> message) {
-    // Generate a new random request id.
-    uint32_t id;
-    while (messageBuffers.contains(id = std::rand()))
-        ;
-
-    // Add the ID to the message queue.
-    auto messageBuffer = std::make_shared<MessageBuffer<std::unique_ptr<Message>>>();
-    messageBuffers.insert({id, messageBuffer});
-
-    // Send the request to the peer.
-    const auto result = connector.sendMessage(address, wrapMessage(0x12, id, std::move(message)));
-    message = nullptr;
-    if (!result.ok()) {
-        // Remove the ID from the message queue.
-        messageBuffers.erase(id);
-        return {result, -1};
-    }
-
-    // Add the message ID to the peers_messageIds map.
-    messageIdsToPeers.insert({id, address});
-
-    // Add the message ID to the peers_messageIds map.
-    const auto messageIdsIt = peersToMessageIds.find(address);
-    if (messageIdsIt == peersToMessageIds.end()) {
-        peersToMessageIds.insert({address, {id}});
-    } else {
-        messageIdsIt->second.insert(id);
-    }
-
-    // Return the request id.
-    return {absl::OkStatus(), id};
-}
+std::pair<absl::Status, channel_id_t> DistributedServer::sendInternalRequest(
+    absl::string_view address, std::unique_ptr<Message> message) {}
 
 // See distributed.h for documentation.
 std::pair<absl::Status, std::unique_ptr<Message>> DistributedServer::receiveInternalMessage(
-    const uint32_t id) {
-    // Look for the message queue with the specified ID.
-    auto it = messageBuffers.find(id);
-    if (it == messageBuffers.end()) {
-        return {absl::NotFoundError("Invalid request ID."), nullptr};
-    }
-
-    // Get the message from the queue.
-    auto res = it->second->pop();
-
-    // If the is closed and empty, remove it from the messages_queues map.
-    if (it->second->is_closed() && it->second->empty()) {
-        // Erase the message queue.
-        messageBuffers.erase(it);
-
-        // Erase the message ID from the peers_to_messageIds and remove the peer if it is empty.
-        auto messageIds_it = peersToMessageIds.find(messageIdsToPeers[id]);
-        if (messageIds_it != peersToMessageIds.end()) {
-            messageIds_it->second.erase(id);
-            if (messageIds_it->second.empty()) {
-                peersToMessageIds.erase(messageIds_it);
-            }
-        }
-
-        // Erase the message ID from the messageIds_to_peers map.
-        messageIdsToPeers.erase(id);
-    }
-
-    // Return the message.
-    return std::move(res);
-}
+    const channel_id_t id) {}
 
 // See distributed.h for documentation.
 absl::Status DistributedServer::runTcpServer() {
@@ -246,16 +181,16 @@ void DistributedServer::onConnectorDisconnect(absl::string_view ip) {
     LOG(INFO) << "Peer server '" << ip << "' disconnected.";
 
     // Look for pending messages from the disconnected peer.
-    auto messageIdsIt = peersToMessageIds.find(ip);
-    if (messageIdsIt != peersToMessageIds.end()) {
-        LOG(WARNING) << "Peer server '" << ip << "' disconnected with pending messages.";
+    // auto messageIdsIt = peersToMessageIds.find(ip);
+    // if (messageIdsIt != peersToMessageIds.end()) {
+    //     LOG(WARNING) << "Peer server '" << ip << "' disconnected with pending messages.";
 
-        // Close the message queues of the pending messages remove the message IDs from the
-        // messageIds_to_peers map.
-        for (const auto id : messageIdsIt->second) {
-            messageBuffers[id]->close();
-        }
-    }
+    //     // Close the message queues of the pending messages remove the message IDs from the
+    //     // messageIds_to_peers map.
+    //     for (const auto id : messageIdsIt->second) {
+    //         messageBuffers[id]->close();
+    //     }
+    // }
 
     // Remove from the peers list.
     peers.erase(ip);
@@ -398,113 +333,12 @@ void DistributedServer::forwardRequestToHandler(std::unique_ptr<Request> request
 }
 
 // See distributed.h for documentation.
-void DistributedServer::handleInternalRequest(std::unique_ptr<Request> request) {
-    // Get the port and ip from the connect request.
-    auto *addr = (sockaddr_in *)&request->addr;
-    auto port = ntohs(addr->sin_port);
-    char ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &addr->sin_addr, ip, INET_ADDRSTRLEN);
-
-    // Get the message ID from the end of the message body.
-    uint32_t messageId;
-    auto offset = request->message->header.length - sizeof(uint32_t);
-    memcpy(&messageId, request->message->body.data.data() + offset, sizeof(uint32_t));
-
-    // Create a pipe that will be used to send the response back to the
-    // requesting server with the message ID header.
-    int pipeFds[2];
-    if (pipe(pipeFds) == -1) {
-        LOG(ERROR) << "Failed to create pipe.";
-        return;
-    }
-
-    // Create a new mock request with the fd of the pipe and the content of the
-    // body of the request.
-    request->fd = pipeFds[1];
-
-    // Copy header from the end of the body to the header.
-    offset -= kMessageHeaderLength;
-    memcpy(&request->message->header, request->message->body.data.data() + offset,
-           kMessageHeaderLength);
-    request->message->body.data.erase(request->message->body.data.begin() + offset,
-                                      request->message->body.data.end());
-
-    // Create a new thread that will forward read the response from the pipe, add the appropriate
-    // message ID header, and send the response back to the requesting server.
-    std::thread([this, pipeFds, messageId, ip]() {
-        // Read the response from the pipe while there is data to read.
-        while (true) {
-            // Read the message from the pipe.
-            auto [status, message] = readMessage(pipeFds[0]);
-            if (!status.ok()) {
-                LOG(ERROR) << "Failed to read message from pipe.";
-                break;
-            }
-
-            // Send the response back to the requesting server.
-            if (!connector
-                     .sendMessage(ip, std::move(wrapMessage(0x13, messageId, std::move(message))))
-                     .ok()) {
-                LOG(ERROR) << "Failed to send response to server '" << ip << "'.";
-                break;
-            }
-            message = nullptr;
-        }
-
-        // Send a response end message to the requesting server.
-        auto responseEnd = std::make_unique<Message>();
-        responseEnd->header.protocol = 0x14;
-        responseEnd->header.length = sizeof(uint32_t);
-        responseEnd->body.data.resize(responseEnd->header.length);
-        memcpy(responseEnd->body.data.data(), &messageId, sizeof(uint32_t));
-        if (!connector.sendMessage(ip, std::move(responseEnd)).ok()) {
-            LOG(ERROR) << "Failed to send response end to server '" << ip << "'.";
-        }
-        responseEnd = nullptr;
-
-        // Close the pipe.
-        close(pipeFds[0]);
-        close(pipeFds[1]);
-    }).detach();
-
-    // Forward the request to the protocol processors.
-    forwardRequestToHandler(std::move(request));
-}
+void DistributedServer::handleInternalRequest(std::unique_ptr<Request> request) {}
 
 // See distributed.h for documentation.
-void DistributedServer::handleInternalResponse(std::unique_ptr<Request> request) {
-    // Unwrap the message.
-    auto [messageId, message] = unwrapMessage(std::move(request->message));
-    request->message = nullptr;
-
-    // Look up the message ID in the message ID map.
-    auto messageBuffer = messageBuffers.find(messageId);
-    if (messageBuffer == messageBuffers.end()) {
-        LOG(ERROR) << "Received response for unknown message ID: " << std::to_string(messageId);
-        return;
-    }
-
-    // Add the response to the message queue.
-    if (!messageBuffer->second.get()->push(std::move(message)).ok()) {
-        LOG(ERROR) << "Message queue full for message ID: " << std::to_string(messageId);
-    }
-    // TODO send response end message to peer.
-}
+void DistributedServer::handleInternalResponse(std::unique_ptr<Request> request) {}
 
 // See distributed.h for documentation.
-void DistributedServer::handleInternalResponseEnd(std::unique_ptr<Request> request) {
-    // Get the message ID after the first space.
-    uint32_t messageId;
-    memcpy(&messageId, request->message->body.data.data(), sizeof(uint32_t));
-
-    // Look up the message ID in the message ID map.
-    auto messageBuffer = messageBuffers.find(messageId);
-    if (messageBuffer == messageBuffers.end()) {
-        LOG(ERROR) << "Received response end for unknown message ID: " << std::to_string(messageId);
-        return;
-    }
-    // Set the message queue to done.
-    messageBuffer->second.get()->close();
-}
+void DistributedServer::handleInternalResponseEnd(std::unique_ptr<Request> request) {}
 
 }  // namespace ostp::servercc
