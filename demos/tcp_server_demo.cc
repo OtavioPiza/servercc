@@ -7,7 +7,6 @@ using namespace std;
 using ostp::servercc::handler_t;
 using ostp::servercc::kMessageHeaderLength;
 using ostp::servercc::Message;
-using ostp::servercc::TcpRequest;
 using ostp::servercc::protocol_t;
 using ostp::servercc::Request;
 using ostp::servercc::TcpServer;

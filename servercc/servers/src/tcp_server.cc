@@ -1,5 +1,7 @@
 #include "tcp_server.h"
 
+#include "tcp_request.h"
+
 namespace ostp::servercc {
 
 // See tcp.h for documentation.
