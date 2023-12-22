@@ -62,9 +62,9 @@ endif()
 
 
 # Add subdirectories.
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/distributed)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/distributed)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/clients clients)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/connectors connectors)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/connectors connectors)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/servers servers)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/types types)
 
@@ -75,9 +75,9 @@ target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
 target_link_libraries(
     ${PROJECT_NAME}
     INTERFACE
-        distributed
+        # distributed
         clients
-        connectors
+        # connectors
         servers
         types
 )
@@ -93,12 +93,12 @@ endif()
 if (${PROJECT_IS_TOP_LEVEL} AND BUILD_DEMOS)
     message(STATUS "Building demos for ${PROJECT_NAME}")
 
-    add_executable(distributed_demo demos/distributed_demo.cc)
-    target_link_libraries(
-        distributed_demo
-            ${PROJECT_NAME}
-            absl::log
-    )
+    # add_executable(distributed_demo demos/distributed_demo.cc)
+    # target_link_libraries(
+    #     distributed_demo
+    #         ${PROJECT_NAME}
+    #         absl::log
+    # )
 
     add_executable(tcp_server_demo demos/tcp_server_demo.cc)
     target_link_libraries(

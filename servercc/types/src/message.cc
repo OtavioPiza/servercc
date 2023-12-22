@@ -1,5 +1,7 @@
 #include "message.h"
 
+#include <future>
+
 namespace ostp::servercc {
 
 // See message.h for documentation.
@@ -24,6 +26,21 @@ std::pair<absl::Status, std::unique_ptr<Message>> readMessage(int fd) {
 
     // Return the message.
     return {absl::OkStatus(), std::move(message)};
+}
+
+// See message.h for documentation.
+std::pair<absl::Status, std::unique_ptr<Message>> readMessage(int fd, int timeout) {
+    // Try to read the message as a future.
+    auto future = std::async(
+        std::launch::async,
+        [](int fd) -> std::pair<absl::Status, std::unique_ptr<Message>> { return readMessage(fd); },
+        fd);
+
+    // Wait for the future to complete.
+    if (future.wait_for(std::chrono::milliseconds(timeout)) == std::future_status::timeout) {
+        return {absl::DeadlineExceededError("Timeout reading message"), nullptr};
+    }
+    return future.get();
 }
 
 // See message.h for documentation.

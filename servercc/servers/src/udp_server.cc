@@ -1,5 +1,7 @@
 #include "udp_server.h"
 
+#include "udp_request.h"
+
 namespace ostp::servercc {
 
 // See tcp.h for documentation.
@@ -102,25 +104,23 @@ UdpServer::~UdpServer() { close(this->serverSocketFd); }
     socklen_t addr_len = sizeof(struct sockaddr);
 
     while (true) {
+        sockaddr addr;
         // Create a request.
-        std::unique_ptr<Request> request = std::make_unique<Request>();
-        request->addr = {};
-        request->fd = this->serverSocketFd;
-        request->message = std::make_unique<Message>();
-        int bytes_read = recvfrom(this->serverSocketFd, &request->message->header,
-                                  kMessageHeaderLength, 0, &request->addr, &addr_len);
+        auto message = std::make_unique<Message>();
+        int bytes_read = recvfrom(this->serverSocketFd, &message->header, kMessageHeaderLength, 0,
+                                  &addr, &addr_len);
         if (bytes_read < kMessageHeaderLength) {
             perror("recvfrom");
             continue;
         }
-        request->message->body.data.resize(request->message->header.length);
-        bytes_read = recvfrom(this->serverSocketFd, request->message->body.data.data(),
-                              request->message->header.length, 0, &request->addr, &addr_len);
-        if (bytes_read < request->message->header.length) {
+        message->body.data.resize(message->header.length);
+        bytes_read = recvfrom(this->serverSocketFd, message->body.data.data(),
+                              message->header.length, 0, &addr, &addr_len);
+        if (bytes_read < message->header.length) {
             perror("recvfrom");
             continue;
         }
-        handleRequest(std::move(request));
+        handleRequest(std::make_unique<UdpRequest>(addr, std::move(message)));
     }
 }
 

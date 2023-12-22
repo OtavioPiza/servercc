@@ -90,18 +90,14 @@ TcpServer::~TcpServer() { close(serverSocketFd); }
         }
 
         // Create a request checking for errors.
-        std::unique_ptr<Request> request = std::make_unique<Request>();
-        request->fd = clientSocketFd;
-        request->addr = clientAddr;
         auto [status, message] = readMessage(clientSocketFd);
         if (!status.ok()) {
             perror("readMessage");
             close(clientSocketFd);
             continue;
         }
-        request->message = std::move(message);
-        handleRequest(std::move(request));
+        handleRequest(std::make_unique<TcpRequest>(clientSocketFd, clientAddr, std::move(message)));
     }
 }
 
-} // namespace ostp::servercc
+}  // namespace ostp::servercc

@@ -21,10 +21,13 @@ struct Message {
 };
 
 // Reads a message from the specified file descriptor.
-std::pair<absl::Status, std::unique_ptr<Message>> readMessage(int);
+std::pair<absl::Status, std::unique_ptr<Message>> readMessage(int fd);
+
+// Reads a message from the specified file descriptor with a timeout.
+std::pair<absl::Status, std::unique_ptr<Message>> readMessage(int fd, int timeout);
 
 // Writes a message to the specified file descriptor.
-absl::Status writeMessage(int, std::unique_ptr<Message>);
+absl::Status writeMessage(int fd, std::unique_ptr<Message> message);
 
 // Create a wrapped message with the message ID and append the header and message buffer ID to
 // the body as follows:

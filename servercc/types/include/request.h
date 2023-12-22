@@ -1,26 +1,38 @@
 #ifndef SERVERCC_REQUEST_H
 #define SERVERCC_REQUEST_H
 
+#include <bits/stdc++.h>
 #include <netinet/in.h>
 
 #include <memory>
 
+#include "absl/status/status.h"
 #include "message.h"
 
 namespace ostp::servercc {
 
 // A request to the server.
-struct Request {
-    // The file descriptor of the client.
-    int fd;
+class Request {
+   public:
+    virtual ~Request() = default;
 
-    // Channel to read and write messages.
+    // Returns the socket address of the client.
+    virtual sockaddr getAddr() = 0;
 
-    // The internet address of the client.
-    sockaddr addr;
+    // Returns the protocol of the request.
+    virtual protocol_t getProtocol() = 0;
 
-    // The message header.
-    std::unique_ptr<Message> message;
+    // Receives a message from the client.
+    virtual std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage() = 0;
+
+    // Receives a message from the client with the specified timeout.
+    virtual std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage(int timeout) = 0;
+
+    // Sends a message to the client.
+    virtual absl::Status sendMessage(std::unique_ptr<Message> message) = 0;
+
+    // Terminates the request.
+    virtual void terminate() = 0;
 };
 
 // The type of a protocol handler.
