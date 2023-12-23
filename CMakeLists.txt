@@ -64,7 +64,7 @@ endif()
 # Add subdirectories.
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/distributed)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/clients clients)
-# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/connectors connectors)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/connectors connectors)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/servers servers)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/servercc/types types)
 
@@ -77,7 +77,7 @@ target_link_libraries(
     INTERFACE
         # distributed
         clients
-        # connectors
+        connectors
         servers
         types
 )

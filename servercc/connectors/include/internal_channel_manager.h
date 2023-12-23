@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <semaphore>
 #include <stack>
 
 #include "absl/status/status.h"
@@ -42,7 +43,10 @@ class InternalChannelManager {
     //     writeFd: The write file descriptor of the channel (write-only).
     //     writeMutex: The mutex protecting the write operations.
     InternalChannelManager(const int writeFd, std::shared_ptr<std::mutex> writeMutex)
-        : writeFd(writeFd), writeMutex(writeMutex) {
+        : writeFd(writeFd),
+          writeMutex(writeMutex),
+          freeListMutex(),
+          freeListSemaphore(MaxChannels) {
         // Initialize the free list.
         for (channel_id_t i = 0; i < MaxChannels; i++) {
             freeList.push(i);
@@ -76,7 +80,8 @@ class InternalChannelManager {
 
         // If the message is a response, we need to forward it to the request channel that created
         // the request. Otherwise, if the message is a request, we need to find if there is a
-        // response channel that can handle the request and forward it to that channel.
+        // response channel that can handle the request and forward it to that channel. Finally, if
+        // the message is a request end, we need to close the channel.
         if (protocol == ResponseProtocol) {
             if (requestChannel[id] == nullptr) {
                 LOG(ERROR) << "Channel " << channelId << " does not exist.";
@@ -96,7 +101,19 @@ class InternalChannelManager {
             return {responseChannel[id]->push(std::move(unwrapped)), unwrappedHeaderProtocol,
                     responseChannel[id]};
 
-        } else {
+        } else if (protocol == RequestEndProtocol) {
+            // Check if the channel exists.
+            if (responseChannel[id] == nullptr) {
+                LOG(ERROR) << "Channel " << channelId << " does not exist.";
+                return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
+                        nullptr};
+            }
+            responseChannel[id]->close();
+            responseChannel[id] = nullptr;
+            return {absl::OkStatus(), unwrappedHeaderProtocol, nullptr};
+        }
+
+        else {
             LOG(ERROR) << "Invalid protocol: " << protocol;
             return {absl::Status(absl::StatusCode::kInvalidArgument, "Invalid protocol"),
                     unwrappedHeaderProtocol, nullptr};
@@ -108,20 +125,16 @@ class InternalChannelManager {
     // Returns:
     //     The status of the operation and a pointer to the channel if successful.
     std::pair<absl::Status, std::shared_ptr<request_channel_t>> createRequestChannel() {
+        // Wait on the free list.
+        freeListSemaphore.acquire();
         freeListMutex.lock();
-        if (freeList.empty()) {
-            freeListMutex.unlock();
-            return std::make_pair(
-                absl::Status(absl::StatusCode::kResourceExhausted, "No more channel IDs available"),
-                nullptr);
-        }
         auto id = freeList.top();
         freeList.pop();
         freeListMutex.unlock();
 
         // Create the channel.
         requestChannel[id] = std::make_shared<InternalChannel<RequestProtocol, RequestEndProtocol>>(
-            id, writeFd, writeMutex);
+            id, writeFd, writeMutex, [this](channel_id_t id) { removeChannel(id); });
 
         // Return the channel ID.
         return {absl::OkStatus(), requestChannel[id]};
@@ -143,6 +156,9 @@ class InternalChannelManager {
     // Mutex protecting the free list.
     std::mutex freeListMutex;
 
+    // Semaphore used to block on the free list.
+    std::binary_semaphore freeListSemaphore;
+
     // Mutex protecting the write operations.
     std::shared_ptr<std::mutex> writeMutex;
 
@@ -163,9 +179,25 @@ class InternalChannelManager {
 
         // Create the channel.
         responseChannel[id] =
-            std::make_shared<InternalChannel<ResponseProtocol, ResponseEndProtocol>>(id, writeFd,
-                                                                                     writeMutex);
+            std::make_shared<InternalChannel<ResponseProtocol, ResponseEndProtocol>>(
+                id, writeFd, writeMutex, [](channel_id_t id) {});
         return absl::OkStatus();
+    }
+
+    // Removes the channel with the specified ID from the channel manager and returns the channel
+    // to the free list.
+    //
+    // Arguments:
+    //     id: The ID of the channel to remove.
+    void removeChannel(channel_id_t id) {
+        // Remove the channel from the channel manager.
+        requestChannel[id] = nullptr;
+
+        // Add the channel ID to the free list.
+        freeListMutex.lock();
+        freeList.push(id);
+        freeListMutex.unlock();
+        freeListSemaphore.release();
     }
 };
 

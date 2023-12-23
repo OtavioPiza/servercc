@@ -30,27 +30,13 @@ class InternalChannel {
     //     id: The ID of the channel.
     //     writeFd: The write file descriptor of the channel.
     //     writeMutex: The mutex protecting the write operations.
-    InternalChannel(channel_id_t id, int writeFd, std::shared_ptr<std::mutex> writeMutex)
-        : id(id), writeFd(writeFd), writeMutex(writeMutex) {}
+    //     closeCallback: The callback to call when the channel is closed.
+    InternalChannel(channel_id_t id, int writeFd, std::shared_ptr<std::mutex> writeMutex,
+                    std::function<void(channel_id_t)> closeCallback)
+        : id(id), writeFd(writeFd), writeMutex(writeMutex), closeCallback(closeCallback) {}
 
     // Sends a message through closing the channel.
-    ~InternalChannel() {
-        // Close the channel for reading.
-        close();
-
-        // Write the close message.
-        auto closeMessage = std::make_unique<Message>();
-        closeMessage->header.protocol = WriteEndProtocol;
-        closeMessage->header.length = sizeof(channel_id_t);
-        closeMessage->body.data.resize(sizeof(channel_id_t));
-        memcpy(closeMessage->body.data.data(), &id, sizeof(channel_id_t));
-
-        writeMutex->lock();
-        if (!writeMessage(writeFd, std::move(closeMessage)).ok()) {
-            LOG(ERROR) << "Failed to send close message to channel " << id;
-        }
-        writeMutex->unlock();
-    }
+    ~InternalChannel() { close(); }
 
     // Reads a message from the channel. Blocks until a message is available.
     //
@@ -76,11 +62,40 @@ class InternalChannel {
     // Returns:
     //     A status indicating whether the operation was successful.
     absl::Status write(std::unique_ptr<Message> message) {
+        if (isClosed) {
+            return absl::Status(absl::StatusCode::kFailedPrecondition, "Channel is closed");
+        }
         writeMutex->lock();
         auto status = writeMessage(
             writeFd, std::move(wrapMessage<channel_id_t, WriteProtocol>(id, std::move(message))));
         writeMutex->unlock();
         return std::move(status);
+    }
+
+    // Closes the channel.
+    void close() {
+        if (isClosed) {
+            return;
+        }
+        // Close the message buffer used for reading.
+        messageBuffer.close();
+
+        // Close the channel by sending a close message.
+        auto closeMessage = std::make_unique<Message>();
+        closeMessage->header.protocol = WriteEndProtocol;
+        closeMessage->header.length = sizeof(channel_id_t);
+        closeMessage->body.data.resize(sizeof(channel_id_t));
+        memcpy(closeMessage->body.data.data(), &id, sizeof(channel_id_t));
+
+        writeMutex->lock();
+        if (!writeMessage(writeFd, std::move(closeMessage)).ok()) {
+            LOG(ERROR) << "Failed to send close message to channel " << id;
+        }
+        writeMutex->unlock();
+
+        // Call the close callback to remove the channel from the channel manager.
+        closeCallback(id);
+        isClosed = true;
     }
 
    private:
@@ -93,11 +108,14 @@ class InternalChannel {
     // Mutex protecting the write operations.
     std::shared_ptr<std::mutex> writeMutex;
 
+    // The callback to call when the channel is closed.
+    std::function<void(channel_id_t)> closeCallback;
+
+    // Whether the channel is closed.
+    bool isClosed = false;
+
     // The message buffer used to read messages to the channel.
     ostp::libcc::data_structures::MessageBuffer<std::unique_ptr<Message>> messageBuffer;
-
-    // Closes the channel for writing.
-    void close() { messageBuffer.close(); }
 
     // Pushes a message to the channel's message buffer.
     //
@@ -106,6 +124,9 @@ class InternalChannel {
     // Returns:
     //     A status indicating whether the operation was successful.
     absl::Status push(std::unique_ptr<Message> message) {
+        if (isClosed) {
+            return absl::Status(absl::StatusCode::kFailedPrecondition, "Channel is closed");
+        }
         return messageBuffer.push(std::move(message));
     }
 };

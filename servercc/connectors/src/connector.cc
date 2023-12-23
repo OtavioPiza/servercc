@@ -1,5 +1,7 @@
 #include "connector.h"
 
+#include "internal_request.h"
+
 namespace ostp::servercc {
 
 // Constructors.
@@ -113,13 +115,11 @@ absl::Status Connector::runClient(in_addr_t address) {
             // If a new channel was created, create a new request with the channel ID and
             // start a new thread to process it.
             if (fChannel != nullptr) {
-                auto request = std::make_unique<Request>();
-                request->channel = fChannel;
-                request->addr = client->getClientAddr();
-                request->fd = -1;
+                auto request = std::make_unique<connector_request_t>(
+                    fProtocol, client->getClientAddr(), fChannel);
 
                 // Process the request.
-                auto handlerIt = handlers.find(protocol);
+                auto handlerIt = handlers.find(fProtocol);
                 if (handlerIt == handlers.end()) {
                     std::thread(handlerIt->second, std::move(request)).detach();
                 } else {

@@ -14,6 +14,7 @@ namespace ostp::servercc {
 // A request to the server.
 class Request {
    public:
+    // Destructor of the request. Should be called when the request is no longer needed.
     virtual ~Request() = default;
 
     // Returns the socket address of the client.
