@@ -112,4 +112,16 @@ if (${PROJECT_IS_TOP_LEVEL} AND BUILD_DEMOS)
             ${PROJECT_NAME}
     )
 
+    add_executable(udp_server_demo demos/udp_server_demo.cc)
+    target_link_libraries(
+        udp_server_demo
+            ${PROJECT_NAME}
+    )
+
+    add_executable(multicast_client_demo demos/multicast_client_demo.cc)
+    target_link_libraries(
+        multicast_client_demo
+            ${PROJECT_NAME}
+    )
+
 endif()

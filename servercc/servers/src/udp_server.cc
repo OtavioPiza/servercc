@@ -66,7 +66,7 @@ UdpServer::UdpServer(int16_t port, absl::string_view groupAddress,
             // Try to join the multicast group on that interface.
             if (setsockopt(server_socket_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) <
                 0) {
-                perror("setsockopt");
+                perror("ip_add_membership");
                 close(server_socket_fd);
                 addr = addr->ai_next;
                 success = false;
