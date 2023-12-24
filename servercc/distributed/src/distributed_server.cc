@@ -7,9 +7,6 @@
 #include <random>
 #include <thread>
 
-#include "absl/base/log_severity.h"
-#include "absl/log/globals.h"
-#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "internal_channel_manager.h"
@@ -48,9 +45,6 @@ DistributedServer::DistributedServer(
       defaultHandler(defaultHandler),
       peerConnectCallback(peerConnectCallback),
       peerDisconnectCallback(peerDisconnectCallback) {
-    absl::SetStderrThreshold(absl::LogSeverity::kInfo);  // TODO write to file instead of stderr.
-    absl::InitializeLog();
-
     // TODO define types and return stats from setting handlers.
     // Add the connect request handler to the UDP server.
     absl::Status status;
@@ -190,8 +184,6 @@ void DistributedServer::onConnectorDisconnect(in_addr_t ip) {
     char ipStr[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &ip, ipStr, INET_ADDRSTRLEN);
 
-    LOG(INFO) << "Peer server '" << ipStr << "' disconnected.";
-
     // Look for pending messages from the disconnected peer.
     // auto messageIdsIt = peersToMessageIds.find(ip);
     // if (messageIdsIt != peersToMessageIds.end()) {
@@ -241,10 +233,6 @@ absl::Status DistributedServer::handleConnect(std::unique_ptr<Request> request) 
     char ipStr[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &peerIp, ipStr, INET_ADDRSTRLEN);
 
-    // Log the connect request.
-    LOG(INFO) << "Received connect request from peer server '" << ipStr << "' on port "
-              << std::to_string(peerPort) << ".";
-
     // If the ip address is the same as the interface ip then ignore the
     // request or if the peer server is already connected.
     if (interfaces[0] == ipStr || peers.contains(peerIp)) {
@@ -289,8 +277,6 @@ absl::Status DistributedServer::handleConnect(std::unique_ptr<Request> request) 
                                                 "' to connector: ", connectorStatus.message()));
     }
     peerServer = nullptr;
-
-    LOG(INFO) << "Peer server '" << ipStr << "' connected.";
 
     // Call the peer connect callback.
     if (peerConnectCallback != nullptr) {
@@ -337,8 +323,6 @@ absl::Status DistributedServer::handleConnectAck(std::unique_ptr<Request> reques
         close(tcpRequest->setKeepAlive());
         return std::move(connectorStatus);
     }
-
-    LOG(INFO) << "Peer server '" << ipStr << "' connected.";
 
     // Call the peer connect callback.
     if (peerConnectCallback != nullptr) {

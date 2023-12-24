@@ -3,6 +3,9 @@
 
 #include <functional>
 
+#include "absl/base/log_severity.h"
+#include "absl/log/globals.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -28,6 +31,8 @@ const string prompt = "servercc> ";
 /// The main function.
 int main(int argc, char *argv[]) {
     // Setup the server.
+    absl::SetStderrThreshold(absl::LogSeverity::kInfo);  // TODO write to file instead of stderr.
+    absl::InitializeLog();
 
     // Get the interface name, ip, group, and port from the command line.
     if (argc < 4) {
@@ -134,9 +139,7 @@ int main(int argc, char *argv[]) {
     /// Distributed server.
     DistributedServer server(
         interface, group, {interface_ip}, port,
-        [](std::unique_ptr<Request> request) -> absl::Status {
-            return absl::OkStatus();
-        },
+        [](std::unique_ptr<Request> request) -> absl::Status { return absl::OkStatus(); },
         on_peer_connect, on_peer_disconnect);
 
     // ===================================================================== //
@@ -588,7 +591,8 @@ int main(int argc, char *argv[]) {
         //      << "report_mem\t - Report the memory usage of peers who support the report_mem "
         //         "service"
         //      << endl
-        //      << "sort\t - Sort a list of numbers using peers who support the sort service" << endl
+        //      << "sort\t - Sort a list of numbers using peers who support the sort service" <<
+        //      endl
         //      << "clear\t - Clear the screen" << endl
         //      << "help\t - Print this message" << endl
         //      << "========================" << endl;
