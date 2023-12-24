@@ -48,7 +48,7 @@ DistributedServer::DistributedServer(
     // TODO define types and return stats from setting handlers.
     // Add the connect request handler to the UDP server.
     absl::Status status;
-    if (!(status = udpServer.addHandler(0x10,
+    if (!(status = udpServer.addHandler(kConnectRequestProtocol,
                                         [this](std::unique_ptr<Request> request) -> absl::Status {
                                             return this->handleConnect(std::move(request));
                                         }))
@@ -57,41 +57,12 @@ DistributedServer::DistributedServer(
     }
 
     // Add the connectAck request handler to the TCP server.
-    if (!(status = tcpServer.addHandler(0x11,
+    if (!(status = tcpServer.addHandler(kConnectAckRequestProtocol,
                                         [this](std::unique_ptr<Request> request) -> absl::Status {
                                             return this->handleConnectAck(std::move(request));
                                         }))
              .ok()) {
         LOG(FATAL) << "Failed to add connectAck request handler to TCP server: "
-                   << status.message();
-    }
-
-    // Add the internal request handler to the connector.
-    if (!(status = connector.addHandler(0x12,
-                                        [this](std::unique_ptr<Request> request) -> absl::Status {
-                                            return this->handleInternalRequest(std::move(request));
-                                        }))
-             .ok()) {
-        LOG(FATAL) << "Failed to add internal request handler to connector: " << status.message();
-    }
-
-    // Add the internal response handler to the connector.
-    if (!(status = connector.addHandler(0x13,
-                                        [this](std::unique_ptr<Request> request) -> absl::Status {
-                                            return this->handleInternalResponse(std::move(request));
-                                        }))
-             .ok()) {
-        LOG(FATAL) << "Failed to add internal response handler to connector: " << status.message();
-    }
-
-    // Add the internal response end handler to the connector.
-    if (!(status = connector.addHandler(0x14,
-                                        [this](std::unique_ptr<Request> request) -> absl::Status {
-                                            return this->handleInternalResponseEnd(
-                                                std::move(request));
-                                        }))
-             .ok()) {
-        LOG(FATAL) << "Failed to add internal response end handler to connector: "
                    << status.message();
     }
 }
@@ -146,7 +117,7 @@ absl::Status DistributedServer::multicastMessage(std::unique_ptr<Message> messag
 // See distributed.h for documentation.
 absl::Status DistributedServer::sendConnectMessage() {
     auto message = std::make_unique<Message>();
-    message->header.protocol = 0x10;
+    message->header.protocol = kConnectRequestProtocol;
     message->header.length = sizeof(uint16_t);
     message->body.data.resize(message->header.length);
     memcpy(message->body.data.data(), &port, message->header.length);
@@ -250,7 +221,7 @@ absl::Status DistributedServer::handleConnect(std::unique_ptr<Request> request) 
 
     // Send a connectAck message to the peer server and wait for a connectAck.
     auto connectAckMessage = std::make_unique<Message>();
-    connectAckMessage->header.protocol = 0x11;
+    connectAckMessage->header.protocol = kConnectAckRequestProtocol;
     connectAckMessage->header.length = 0;
     auto sendStatus = peerServer->sendMessage(std::move(connectAckMessage));
     if (!sendStatus.ok()) {
@@ -262,9 +233,9 @@ absl::Status DistributedServer::handleConnect(std::unique_ptr<Request> request) 
 
     // If the peer server did not send a connectAck then close the socket and return.
     auto [receiveStatus, ackResponse] = peerServer->receiveMessage();
-    if (!receiveStatus.ok() || ackResponse->header.protocol != 0x11) {
+    if (!receiveStatus.ok() || ackResponse->header.protocol != kConnectAckResponseProtocol) {
         close(peerServer->getClientFd());
-        return absl::InternalError(absl::StrCat("Failed to receive connectAck from peer server '",
+        return absl::InternalError(absl::StrCat("Failed to receive connect end from peer server '",
                                                 ipStr, "': ", receiveStatus.message()));
     }
     ackResponse = nullptr;
@@ -301,7 +272,7 @@ absl::Status DistributedServer::handleConnectAck(std::unique_ptr<Request> reques
 
     // Send connectAck to the peer server.
     auto connectAckMessage = std::make_unique<Message>();
-    connectAckMessage->header.protocol = 0x11;
+    connectAckMessage->header.protocol = kConnectAckResponseProtocol;
     connectAckMessage->header.length = 0;
     ASSERT_OK(request->sendMessage(std::move(connectAckMessage)),
               "Failed to send connectAck to peer server");
@@ -328,21 +299,6 @@ absl::Status DistributedServer::handleConnectAck(std::unique_ptr<Request> reques
     if (peerConnectCallback != nullptr) {
         peerConnectCallback(peerIp, *this);
     }
-    return absl::OkStatus();
-}
-
-// See distributed.h for documentation.
-absl::Status DistributedServer::handleInternalRequest(std::unique_ptr<Request> request) {
-    return absl::OkStatus();
-}
-
-// See distributed.h for documentation.
-absl::Status DistributedServer::handleInternalResponse(std::unique_ptr<Request> request) {
-    return absl::OkStatus();
-}
-
-// See distributed.h for documentation.
-absl::Status DistributedServer::handleInternalResponseEnd(std::unique_ptr<Request> request) {
     return absl::OkStatus();
 }
 

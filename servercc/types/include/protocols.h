@@ -8,6 +8,24 @@ namespace ostp::servercc {
 // The type of the message protocol.
 typedef uint32_t protocol_t;
 
+// Starts a new connection UDP request.
+//
+// | header | body -------------------- |
+// | header | port to send response to  |
+constexpr protocol_t kConnectRequestProtocol = 0x00;
+
+// Acknowledges a connection UDP request.
+//
+// | header | body ---- |
+// | header |           |
+constexpr protocol_t kConnectAckRequestProtocol = 0x01;
+
+// Responds to a connection UDP request.
+//
+// | header | body ---- |
+// | header |           |
+constexpr protocol_t kConnectAckResponseProtocol = 0x02;
+
 // Starts a new internal request channel.
 //
 // | header | body --------------------------------------- |                                         

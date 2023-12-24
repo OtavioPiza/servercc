@@ -15,7 +15,7 @@ using ostp::servercc::DistributedServer;
 using ostp::servercc::Request;
 using namespace std;
 
-/// The letterhead for the shell.
+// The letterhead for the shell.
 const string letterhead = R"(
 ░██████╗███████╗██████╗░██╗░░░██╗███████╗██████╗░░█████╗░░█████╗░
 ██╔════╝██╔════╝██╔══██╗██║░░░██║██╔════╝██╔══██╗██╔══██╗██╔══██╗
@@ -25,10 +25,10 @@ const string letterhead = R"(
 ╚═════╝░╚══════╝╚═╝░░╚═╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝░╚════╝░░╚════╝░
 )";
 
-/// The shell prompt.
+// The shell prompt.
 const string prompt = "servercc> ";
 
-/// The main function.
+// The main function.
 int main(int argc, char *argv[]) {
     // Setup the server.
     absl::SetStderrThreshold(absl::LogSeverity::kInfo);  // TODO write to file instead of stderr.
@@ -36,43 +36,44 @@ int main(int argc, char *argv[]) {
 
     // Get the interface name, ip, group, and port from the command line.
     if (argc < 4) {
-        cout << "Usage: " << argv[0] << " <interface> <ip> <group> <port> [abilities...]" << endl
-             << endl
-             << "Abilities: report_temp, report_mem, sort" << endl;
+        cout << "Usage: " << argv[0] << " <interface> <ip> <group> <port>" << endl;
         return 0;
     }
 
-    /// The interface name.
+    // The interface name.
     const string interface = argv[1];
 
-    /// The ip address of the interface.
+    // The ip address of the interface.
     const string interface_ip = argv[2];
 
-    /// The multicast group.
+    // The multicast group.
     const string group = argv[3];
 
-    /// The port to listen on.
+    // The port to listen on.
     const int port = stoi(argv[4]);
 
-    /// The provided_services of the server.
+    // The provided_services of the server.
     set<string> provided_services = {"echo", "block"};
     for (int i = 5; i < argc; i++) {
         provided_services.insert(argv[i]);
     }
 
-    /// A map of peers to the services they provide.
+    // A map of peers to the services they provide.
     map<string, set<string>> peers_to_services;
 
-    /// A map of services to the peers that provide them.
+    // A map of services to the peers that provide them.
     map<string, set<string>> services_to_peers;
 
     // ===================================================================== //
     // ========================== ADD CALLBACKS ============================ //
     // ===================================================================== //
 
-    /// Callback function for when a peer connects.
-    function on_peer_connect = [&](in_addr_t ip, DistributedServer &server) {
-        LOG(INFO) << "Peer connected: '" << ip << "'";
+    // Callback function for when a peer connects.
+    function onPeerConnect = [&](in_addr_t ip, DistributedServer &server) {
+        char ipStr[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &ip, ipStr, INET_ADDRSTRLEN);
+
+        LOG(INFO) << "Peer connected: '" << ipStr << "'";
 
         // peers_to_services.insert({peer_ip, set<string>()});
 
@@ -115,8 +116,8 @@ int main(int argc, char *argv[]) {
         // }
     };
 
-    /// Callback function for when a peer disconnects.
-    function on_peer_disconnect = [&](in_addr_t ip, DistributedServer &server) {
+    // Callback function for when a peer disconnects.
+    function onPeerDisconnect = [&](in_addr_t ip, DistributedServer &server) {
         LOG(INFO) << "Peer disconnected: '" << ip << "'";
         // Remove the peer from the services map.
         // for (const auto &peer_services : peers_to_services[peer_ip]) {
@@ -136,17 +137,17 @@ int main(int argc, char *argv[]) {
     // ========================== CREATE SERVER ============================ //
     // ===================================================================== //
 
-    /// Distributed server.
+    // Distributed server.
     DistributedServer server(
         interface, group, {interface_ip}, port,
         [](std::unique_ptr<Request> request) -> absl::Status { return absl::OkStatus(); },
-        on_peer_connect, on_peer_disconnect);
+        onPeerConnect, onPeerDisconnect);
 
     // ===================================================================== //
     // ========================== ADD HANDLERS ============================= //
     // ===================================================================== //
 
-    /// Handler for the announce_services request.
+    // Handler for the announce_services request.
     // server.add_handler("announce_services", [&](const Request request) {
     //     // Get the ip address of the peer from request.addr.
     //     char ip[INET_ADDRSTRLEN];
@@ -165,7 +166,7 @@ int main(int argc, char *argv[]) {
     //     close(request.fd);
     // });
 
-    /// Handler for the echo request.
+    // Handler for the echo request.
     // server.add_handler("echo", [&](const Request request) {
     //     // Get the ip address of the peer from request.addr.
     //     char ip[INET_ADDRSTRLEN];
@@ -179,10 +180,10 @@ int main(int argc, char *argv[]) {
     //     close(request.fd);
     // });
 
-    /// Handler for a block request.
-    ///
-    /// When the server receives a block request, it will block the peer forever. This is used to
-    /// test the peer disconnect callback.
+    // Handler for a block request.
+    //
+    // When the server receives a block request, it will block the peer forever. This is used to
+    // test the peer disconnect callback.
     // server.add_handler("block", [&](const Request request) {
     //     // Get the ip address of the peer from request.addr.
     //     char ip[INET_ADDRSTRLEN];
@@ -197,7 +198,7 @@ int main(int argc, char *argv[]) {
     //     }
     // });
 
-    /// Handler for the sort request.
+    // Handler for the sort request.
     // server.add_handler("sort", [&](const Request request) {
     //     // Get the ip address of the peer from request.addr.
     //     char ip[INET_ADDRSTRLEN];
@@ -225,7 +226,7 @@ int main(int argc, char *argv[]) {
     //     close(request.fd);
     // });
 
-    /// Handler for the report_temp request.
+    // Handler for the report_temp request.
     // server.add_handler("report_temp", [&](const Request request) {
     //     // Get the ip address of the peer from request.addr.
     //     char ip[INET_ADDRSTRLEN];
@@ -255,7 +256,7 @@ int main(int argc, char *argv[]) {
     //     close(request.fd);
     // });
 
-    /// Handler to report memory usage.
+    // Handler to report memory usage.
     // server.add_handler("report_mem", [&](const Request request) {
     //     // Get the ip address of the peer from request.addr.
     //     char ip[INET_ADDRSTRLEN];

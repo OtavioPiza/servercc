@@ -183,24 +183,6 @@ class DistributedServer {
     // Arguments:
     //     request: The request to handle.
     absl::Status handleConnectAck(std::unique_ptr<Request> request);
-
-    // Method to handle an internal request.
-    //
-    // Arguments:
-    //     request: The request to handle.
-    absl::Status handleInternalRequest(std::unique_ptr<Request> request);
-
-    // Method to handle an internal response.
-    //
-    // Arguments:
-    //     request: The request to handle.
-    absl::Status handleInternalResponse(std::unique_ptr<Request> request);
-
-    // Method to handle an internal response end.
-    //
-    // Arguments:
-    //     request: The request to handle.
-    absl::Status handleInternalResponseEnd(std::unique_ptr<Request> request);
 };
 
 }  // namespace ostp::servercc
