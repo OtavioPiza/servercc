@@ -60,10 +60,16 @@ class Connector {
 
    private:
     // Represents an internal client with a channel manager and write mutex.
-    struct InternalClient {
+    class InternalClient {
+       public:
+        InternalClient(const std::shared_ptr<TcpClient> client,
+                       const std::shared_ptr<std::mutex> writeMutex,
+                       const std::shared_ptr<connector_channel_manager_t> channelManager)
+            : client(client), writeMutex(writeMutex), channelManager(channelManager) {}
+
         const std::shared_ptr<TcpClient> client;
-        const std::shared_ptr<connector_channel_manager_t> channelManager;
         const std::shared_ptr<std::mutex> writeMutex;
+        const std::shared_ptr<connector_channel_manager_t> channelManager;
     };
 
     // The map of protocol handlers.

@@ -55,6 +55,14 @@ class InternalChannelManager {
         }
     }
 
+    // Destructor for the channel manager. Closes all channels by calling close().
+    ~InternalChannelManager() {
+        for (channel_id_t i = 0; i < MaxChannels; i++) {
+            removeResponseChannel(i);
+            removeRequestChannel(i);
+        }
+    }
+
     // Tries to forward a ResponseProtocol message to the appropiate requestChannel channel.
     //
     // Arguments:

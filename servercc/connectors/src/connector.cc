@@ -38,11 +38,12 @@ absl::Status Connector::addClient(std::unique_ptr<TcpClient> client) {
         std::make_shared<connector_channel_manager_t>(client->getClientFd(), writeMutex);
 
     clientsMutex.lock();
-    clients.insert({address, InternalClient{
-                                 .client = std::move(client),
-                                 .channelManager = channelManager,
-                                 .writeMutex = writeMutex,
-                             }});
+    if (clients.contains(address)) {
+        clientsMutex.unlock();
+        return absl::AlreadyExistsError("Client already exists.");
+    }
+    clients.emplace(address, InternalClient(std::move(client), writeMutex, channelManager));
+    client = nullptr;
     clientsMutex.unlock();
 
     // Run the client.
@@ -59,11 +60,10 @@ Connector::sendRequest(in_addr_t address, std::unique_ptr<Message> message) {
         clientsMutex.unlock();
         return {absl::NotFoundError("Client does not exist"), nullptr};
     }
-    auto client = clientIt->second;
     clientsMutex.unlock();
 
     // Open the channel and send the message.
-    auto [status, channel] = client.channelManager->createRequestChannel();
+    auto [status, channel] = clientIt->second.channelManager->createRequestChannel();
     if (!status.ok()) {
         return {status, nullptr};
     }
