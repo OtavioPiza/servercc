@@ -31,10 +31,15 @@ class InternalChannel {
     InternalChannel(const channel_id_t id, const int writeFd,
                     const std::shared_ptr<std::mutex> writeMutex,
                     const std::function<void(channel_id_t)> closeCallback)
-        : id(id), writeFd(writeFd), writeMutex(writeMutex), closeCallback(closeCallback) {}
+        : id(id), writeFd(writeFd), writeMutex(writeMutex), closeCallback(closeCallback) {
+        LOG(INFO) << "Opened channel " << id;
+    }
 
     // Destructor for the channel. Closes the channel by calling close().
-    ~InternalChannel() { close(); }
+    ~InternalChannel() {
+        close();
+        LOG(INFO) << "Closed channel " << id;
+    }
 
     // Reads a message from the channel. Blocks until a message is available.
     //
@@ -88,6 +93,7 @@ class InternalChannel {
         if (isClosed) {
             return;
         }
+        LOG(INFO) << "Closing channel " << id;
         messageBuffer.close();
 
         // Close the channel by sending a close message.
@@ -98,14 +104,16 @@ class InternalChannel {
         memcpy(closeMessage->body.data.data(), &id, sizeof(channel_id_t));
 
         writeMutex->lock();
-        if (!writeMessage(writeFd, std::move(closeMessage)).ok()) {
-            LOG(ERROR) << "Failed to send close message to channel " << id;
+        auto status = writeMessage(writeFd, std::move(closeMessage));
+        if (!status.ok()) {
+            LOG(ERROR) << "Failed to send close message to channel " << id << ": "
+                       << status.message();
         }
         writeMutex->unlock();
 
         // Call the close callback to remove the channel from the channel manager.
-        closeCallback(id);
         isClosed = true;
+        closeCallback(id);
     }
 
    private:

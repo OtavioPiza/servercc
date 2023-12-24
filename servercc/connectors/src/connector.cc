@@ -81,23 +81,26 @@ absl::Status Connector::runClient(in_addr_t address) {
         clientsMutex.unlock();
         return absl::NotFoundError("Client does not exist.");
     }
-clientsMutex.unlock();
+    clientsMutex.unlock();
     auto client = clientIt->second.client;
     auto channelManager = clientIt->second.channelManager;
 
     // Run the client.
     std::thread clientThread([address, client, channelManager, this]() {
+        char ipStr[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &address, ipStr, INET_ADDRSTRLEN);
+
         // Enter a read loop.
         while (true) {
             // Read the request.
-            auto [status, message] = client->receiveMessage();
-            if (!status.ok()) {
-                LOG(ERROR) << "Failed to receive message from client " << address << ": "
-                           << status.message();
+            auto [rcvStatus, message] = client->receiveMessage();
+            if (!rcvStatus.ok()) {
+                LOG(ERROR) << "Failed to receive message from client '" << ipStr << "': "
+                           << rcvStatus.message();
 
-                if (!(status = client->closeSocket()).ok()) {
-                    LOG(ERROR) << "Failed to close socket for client " << address << ": "
-                               << status.message();
+                if (!(rcvStatus = client->closeSocket()).ok()) {
+                    LOG(ERROR) << "Failed to close socket for client '" << ipStr << "': "
+                               << rcvStatus.message();
                 }
                 clientsMutex.lock();
                 clients.erase(address);
@@ -107,22 +110,22 @@ clientsMutex.unlock();
             }
 
             // If the request is internal, forward it to the appropriate channel.
-            auto [fStatus, fProtocol, fChannel] =
+            auto [fwdStatus, fwdProtocol, fwdChannel] =
                 channelManager->forwardMessage(std::move(message));
-            if (!fStatus.ok()) {
-                LOG(ERROR) << "Failed to forward message from client " << address << ": "
-                           << status.message();
+            if (!fwdStatus.ok()) {
+                LOG(ERROR) << "Failed to forward message from client '" << ipStr << "': "
+                           << fwdStatus.message();
             }
 
             // If a new channel was created, create a new request with the channel ID and
             // start a new thread to process it.
-            if (fChannel != nullptr) {
+            if (fwdChannel != nullptr) {
                 auto request = std::make_unique<connector_request_t>(
-                    fProtocol, client->getClientAddr(), fChannel);
+                    fwdProtocol, client->getClientAddr(), fwdChannel);
 
                 // Process the request.
-                auto handlerIt = handlers.find(fProtocol);
-                if (handlerIt == handlers.end()) {
+                auto handlerIt = handlers.find(fwdProtocol);
+                if (handlerIt != handlers.end()) {
                     std::thread(handlerIt->second, std::move(request)).detach();
                 } else {
                     std::thread(defaultHandler, std::move(request)).detach();

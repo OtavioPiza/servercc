@@ -39,7 +39,7 @@ absl::Status TcpClient::openSocket() {
     if (getaddrinfo(getAddress().data(), std::to_string(getPort()).c_str(), hints, &serverInfo) !=
         0) {
         delete hints;
-        return absl::Status(absl::StatusCode::kInternal, "Could not resolve server address.");
+        return absl::InternalError("Could not resolve server address.");
     }
 
     // Go through the list of addresses and try to connect to the server.

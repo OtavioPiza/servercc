@@ -46,8 +46,8 @@ std::unique_ptr<Message> wrapMessage(const T& value, std::unique_ptr<Message> me
     memcpy(message->body.data.data() + offset, &message->header, kMessageHeaderLength);
 
     // Copy the value.
-    memcpy(message->body.data.data() + offset, &value, sizeof(T));
     offset += kMessageHeaderLength;
+    memcpy(message->body.data.data() + offset, &value, sizeof(T));
 
     // Update the header.
     message->header.protocol = Protocol;

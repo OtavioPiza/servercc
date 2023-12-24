@@ -23,7 +23,7 @@
 // If any var args are provided they will added to the status message.
 #ifndef ASSERT_OK
 #define ASSERT_OK(expr, ...)                                                                 \
-    auto VAR_LINENO(_status) = (expr);                                                       \
+    auto VAR_LINENO(_status) = expr;                                                         \
     if (!VAR_LINENO(_status).ok()) {                                                         \
         return absl::Status(VAR_LINENO(_status).code(),                                      \
                             absl::StrCat(__VA_ARGS__, ": ", VAR_LINENO(_status).message())); \
@@ -35,7 +35,7 @@
 // pair<absl::Status, T>.
 #ifndef ASSERT_OK_AND_ASSIGN
 #define ASSERT_OK_AND_ASSIGN(variable, expr, ...)                                                  \
-    auto VAR_LINENO(_status) = (expr);                                                             \
+    auto VAR_LINENO(_status) = expr;                                                               \
     if (!VAR_LINENO(_status).first.ok()) {                                                         \
         return absl::Status(VAR_LINENO(_status).first.code(),                                      \
                             absl::StrCat(__VA_ARGS__, ": ", VAR_LINENO(_status).first.message())); \

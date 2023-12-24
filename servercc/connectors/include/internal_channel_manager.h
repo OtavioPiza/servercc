@@ -57,6 +57,7 @@ class InternalChannelManager {
 
     // Destructor for the channel manager. Closes all channels by calling close().
     ~InternalChannelManager() {
+        LOG(INFO) << "Closing all channels.";
         for (channel_id_t i = 0; i < MaxChannels; i++) {
             removeResponseChannel(i);
             removeRequestChannel(i);
@@ -94,7 +95,7 @@ class InternalChannelManager {
                 return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
                         nullptr};
             }
-            return {requestChannel[id]->push(std::move(message)), unwrappedHeaderProtocol, nullptr};
+            return {requestChannel[id]->push(std::move(unwrapped)), unwrappedHeaderProtocol, nullptr};
 
         } else if (protocol == ResponseEndProtocol) {
             if (requestChannel[id] == nullptr) {
@@ -197,6 +198,8 @@ class InternalChannelManager {
         if (responseChannel[id] == nullptr) {
             return;
         }
+        LOG(INFO) << "Removing response channel " << id << "from manager, "
+                  << responseChannel[id].use_count() << "users." << std::endl;
         responseChannel[id]->close();
         responseChannel[id] = nullptr;
     }
@@ -210,6 +213,8 @@ class InternalChannelManager {
         if (requestChannel[id] == nullptr) {
             return;
         }
+        LOG(INFO) << "Removing request channel " << id << "from manager, "
+                  << requestChannel[id].use_count() << "users." << std::endl;
         requestChannel[id]->close();
         requestChannel[id] = nullptr;
 
