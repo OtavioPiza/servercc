@@ -75,10 +75,13 @@ Connector::sendRequest(in_addr_t address, std::unique_ptr<Message> message) {
 // See connector.h for documentation.
 absl::Status Connector::runClient(in_addr_t address) {
     // Check if the client exists.
+    clientsMutex.lock();
     auto clientIt = clients.find(address);
     if (clientIt == clients.end()) {
+        clientsMutex.unlock();
         return absl::NotFoundError("Client does not exist.");
     }
+clientsMutex.unlock();
     auto client = clientIt->second.client;
     auto channelManager = clientIt->second.channelManager;
 
@@ -96,7 +99,9 @@ absl::Status Connector::runClient(in_addr_t address) {
                     LOG(ERROR) << "Failed to close socket for client " << address << ": "
                                << status.message();
                 }
+                clientsMutex.lock();
                 clients.erase(address);
+                clientsMutex.unlock();
                 disconnectCallback(address);
                 break;
             }
