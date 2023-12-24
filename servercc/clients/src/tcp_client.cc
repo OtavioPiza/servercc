@@ -44,12 +44,10 @@ absl::Status TcpClient::openSocket() {
 
     // Go through the list of addresses and try to connect to the server.
     for (struct addrinfo *p = serverInfo; p != nullptr; p = p->ai_next) {
-        // Create a socket.
+        // Create a socket and try to connect to the server.
         if ((clientFd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             continue;
         }
-
-        // Connect to the server.
         if (connect(clientFd, p->ai_addr, p->ai_addrlen) == -1) {
             close(clientFd);
             clientFd = -1;
@@ -70,57 +68,46 @@ absl::Status TcpClient::openSocket() {
     memcpy(&clientAddr, serverInfo->ai_addr, serverInfo->ai_addrlen);
 
     // Return.
-    return absl::Status(absl::StatusCode::kOk, "Socket opened successfully.");
+    return absl::OkStatus();
 }
 
 // See tcp_client.h for documentation.
 absl::Status TcpClient::closeSocket() {
-    // If the socket is already closed, return.
     if (clientFd == -1) {
-        return absl::Status(absl::StatusCode::kFailedPrecondition, "Socket is already closed.");
+        return absl::OkStatus();
     }
-
-    // Close the socket.
     close(clientFd);
     clientFd = -1;
     isSocketOpen = false;
-
-    // Return.
-    return absl::Status(absl::StatusCode::kOk, "Socket closed successfully.");
+    return absl::OkStatus();
 }
 
 // See tcp_client.h for documentation.
 absl::Status TcpClient::sendMessage(std::unique_ptr<Message> message) {
     // If the socket is not open, throw an exception.
     if (clientFd == -1) {
-        return absl::Status(absl::StatusCode::kFailedPrecondition, "Socket is not open.");
+        return absl::FailedPreconditionError("Socket is not open.");
     }
-
     // Send the message.
     auto sent = send(clientFd, &message->header, kMessageHeaderLength, 0);
     if (sent < kMessageHeaderLength) {
-        perror("send");
-        return absl::Status(absl::StatusCode::kInternal, "Failed to send message header.");
+        perror("send header");
+        return absl::InternalError("Failed to send message header.");
     }
     sent = send(clientFd, message->body.data.data(), message->header.length, 0);
     if (sent < message->header.length) {
-        perror("send");
-        return absl::Status(absl::StatusCode::kInternal, "Failed to send message body.");
+        perror("send body");
+        return absl::InternalError("Failed to send message body.");
     }
     fsync(clientFd);
-
-    // Return.
-    return absl::Status(absl::StatusCode::kOk, "Message sent successfully.");
+    return absl::OkStatus();
 }
 
 // See tcp_client.h for documentation.
 std::pair<absl::Status, std::unique_ptr<Message>> TcpClient::receiveMessage() {
-    // If the socket is not open, return an error.
     if (clientFd == -1) {
         return {absl::FailedPreconditionError("Socket is not open."), nullptr};
     }
-
-    // Receive message.
     return std::move(readMessage(clientFd));
 }
 
