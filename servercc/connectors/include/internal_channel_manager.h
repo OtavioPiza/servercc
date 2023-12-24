@@ -69,7 +69,6 @@ class InternalChannelManager {
         auto [status, channelId, unwrapped] = unwrapMessage<channel_id_t>(std::move(message));
         message = nullptr;
         if (!status.ok()) {
-            LOG(ERROR) << "Failed to unwrap message: " << status.message();
             return {status, -1, nullptr};
         }
         auto unwrappedHeaderProtocol = unwrapped->header.protocol;
@@ -78,24 +77,29 @@ class InternalChannelManager {
         auto id = *channelId;
         channelId = nullptr;
 
-        // If the message is a response, we need to forward it to the request channel that created
-        // the request. Otherwise, if the message is a request, we need to find if there is a
-        // response channel that can handle the request and forward it to that channel. Finally, if
-        // the message is a request end, we need to close the channel.
+        // If the protocol is a response push the message to the requesting channel. Else if the
+        // protocol is a response end close the requesting channel. Else if the protocol is a
+        // request push the message to the responding channel. Else if the protocol is a request
+        // end close the responding channel. Else return an error.
         if (protocol == ResponseProtocol) {
             if (requestChannel[id] == nullptr) {
-                LOG(ERROR) << "Channel " << channelId << " does not exist.";
                 return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
                         nullptr};
             }
             return {requestChannel[id]->push(std::move(message)), unwrappedHeaderProtocol, nullptr};
 
+        } else if (protocol == ResponseEndProtocol) {
+            if (requestChannel[id] == nullptr) {
+                return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
+                        nullptr};
+            }
+            removeRequestChannel(id);
+            return {absl::OkStatus(), unwrappedHeaderProtocol, nullptr};
+
         } else if (protocol == RequestProtocol) {
             // Check if the channel exists otherwise try to create it.
             absl::Status status;
             if (responseChannel[id] == nullptr && !(status = createResponseChannel(id)).ok()) {
-                LOG(ERROR) << "Channel " << channelId
-                           << " does not exist and could not be created: " << status.message();
                 return {status, unwrappedHeaderProtocol, nullptr};
             }
             return {responseChannel[id]->push(std::move(unwrapped)), unwrappedHeaderProtocol,
@@ -104,17 +108,14 @@ class InternalChannelManager {
         } else if (protocol == RequestEndProtocol) {
             // Check if the channel exists.
             if (responseChannel[id] == nullptr) {
-                LOG(ERROR) << "Channel " << channelId << " does not exist.";
                 return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
                         nullptr};
             }
-            responseChannel[id]->close();
-            responseChannel[id] = nullptr;
+            removeResponseChannel(id);
             return {absl::OkStatus(), unwrappedHeaderProtocol, nullptr};
         }
 
         else {
-            LOG(ERROR) << "Invalid protocol: " << protocol;
             return {absl::Status(absl::StatusCode::kInvalidArgument, "Invalid protocol"),
                     unwrappedHeaderProtocol, nullptr};
         }
@@ -134,24 +135,21 @@ class InternalChannelManager {
 
         // Create the channel.
         requestChannel[id] = std::make_shared<InternalChannel<RequestProtocol, RequestEndProtocol>>(
-            id, writeFd, writeMutex, [this](channel_id_t id) { removeChannel(id); });
+            id, writeFd, writeMutex, [this](channel_id_t id) { this->removeRequestChannel(id); });
 
         // Return the channel ID.
         return {absl::OkStatus(), requestChannel[id]};
     }
 
    private:
+    // The write file descriptor of the channel (write-only).
+    const int writeFd;
+
+    // Mutex protecting the write operations.
+    const std::shared_ptr<std::mutex> writeMutex;
+
     // The free list of channel IDs.
     std::stack<channel_id_t> freeList;
-
-    // The array of request channels used to send requests to another peer.
-    std::array<std::shared_ptr<request_channel_t>, MaxChannels> requestChannel;
-
-    // The array of response channels used to send responses to another peer.
-    std::array<std::shared_ptr<response_channel_t>, MaxChannels> responseChannel;
-
-    // The array to map channel IDs to the other channel ID.
-    std::array<channel_id_t, MaxChannels> externalToInternal;
 
     // Mutex protecting the free list.
     std::mutex freeListMutex;
@@ -159,11 +157,11 @@ class InternalChannelManager {
     // Semaphore used to block on the free list.
     std::binary_semaphore freeListSemaphore;
 
-    // Mutex protecting the write operations.
-    std::shared_ptr<std::mutex> writeMutex;
+    // The array of request channels used to send requests to another peer.
+    std::array<std::shared_ptr<request_channel_t>, MaxChannels> requestChannel;
 
-    // The write file descriptor of the channel (write-only).
-    const int writeFd;
+    // The array of response channels used to send responses to another peer.
+    std::array<std::shared_ptr<response_channel_t>, MaxChannels> responseChannel;
 
     // Tries to create a new responseChannel channel with the specified ID.
     //
@@ -174,23 +172,37 @@ class InternalChannelManager {
     absl::Status createResponseChannel(channel_id_t id) {
         // Check if the channel exists.
         if (responseChannel[id] != nullptr) {
-            return absl::Status(absl::StatusCode::kAlreadyExists, "Channel already exists");
+            return absl::AlreadyExistsError("Channel already exists");
         }
-
-        // Create the channel.
         responseChannel[id] =
             std::make_shared<InternalChannel<ResponseProtocol, ResponseEndProtocol>>(
-                id, writeFd, writeMutex, [](channel_id_t id) {});
+                id, writeFd, writeMutex,
+                [this](channel_id_t id) { this->removeResponseChannel(id); });
         return absl::OkStatus();
     }
 
-    // Removes the channel with the specified ID from the channel manager and returns the channel
-    // to the free list.
+    // Removes the response channel with the specified ID from the channel manager.
     //
     // Arguments:
     //     id: The ID of the channel to remove.
-    void removeChannel(channel_id_t id) {
-        // Remove the channel from the channel manager.
+    void removeResponseChannel(channel_id_t id) {
+        if (responseChannel[id] == nullptr) {
+            return;
+        }
+        responseChannel[id]->close();
+        responseChannel[id] = nullptr;
+    }
+
+    // Removes the request channel with the specified ID from the channel manager and returns the
+    // channel to the free list.
+    //
+    // Arguments:
+    //     id: The ID of the channel to remove.
+    void removeRequestChannel(channel_id_t id) {
+        if (requestChannel[id] == nullptr) {
+            return;
+        }
+        requestChannel[id]->close();
         requestChannel[id] = nullptr;
 
         // Add the channel ID to the free list.

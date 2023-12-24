@@ -3,9 +3,9 @@
 
 #include <functional>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/log/log.h"
 #include "servercc.h"
 
 using ostp::servercc::DistributedServer;
@@ -66,8 +66,8 @@ int main(int argc, char *argv[]) {
     // ===================================================================== //
 
     /// Callback function for when a peer connects.
-    function on_peer_connect = [&](absl::string_view peer_ip, DistributedServer &server) {
-        LOG(INFO) << "Peer connected: '" << peer_ip << "'";
+    function on_peer_connect = [&](in_addr_t ip, DistributedServer &server) {
+        LOG(INFO) << "Peer connected: '" << ip << "'";
 
         // peers_to_services.insert({peer_ip, set<string>()});
 
@@ -111,8 +111,8 @@ int main(int argc, char *argv[]) {
     };
 
     /// Callback function for when a peer disconnects.
-    function on_peer_disconnect = [&](absl::string_view peer_ip, DistributedServer &server) {
-        LOG(INFO) << "Peer disconnected: '" << peer_ip << "'";
+    function on_peer_disconnect = [&](in_addr_t ip, DistributedServer &server) {
+        LOG(INFO) << "Peer disconnected: '" << ip << "'";
         // Remove the peer from the services map.
         // for (const auto &peer_services : peers_to_services[peer_ip]) {
         //     services_to_peers[peer_services].erase(peer_ip);
@@ -134,11 +134,10 @@ int main(int argc, char *argv[]) {
     /// Distributed server.
     DistributedServer server(
         interface, group, {interface_ip}, port,
-        [](std::unique_ptr<Request> request) { 
-            LOG(WARNING) << "No handler for protocol: " << request->message->header.protocol;
-            
-            close(request->fd); }, on_peer_connect,
-        on_peer_disconnect);
+        [](std::unique_ptr<Request> request) -> absl::Status {
+            return absl::OkStatus();
+        },
+        on_peer_connect, on_peer_disconnect);
 
     // ===================================================================== //
     // ========================== ADD HANDLERS ============================= //
@@ -580,19 +579,19 @@ int main(int argc, char *argv[]) {
 
         // Print supported commands.
         // else if (line == "help" || line == "h") {
-        cout << "== Supported Commands ==" << endl
-             << "peers\t - List peers currently connected" << endl
-             << "services\t - List services currently available" << endl
-             << "echo <message>\t - Send a message to peers who support the echo service" << endl
-             << "report_temp\t - Report the temperature of peers who support the report_temp "
-                "service"
-             << "report_mem\t - Report the memory usage of peers who support the report_mem "
-                "service"
-             << endl
-             << "sort\t - Sort a list of numbers using peers who support the sort service" << endl
-             << "clear\t - Clear the screen" << endl
-             << "help\t - Print this message" << endl
-             << "========================" << endl;
+        // cout << "== Supported Commands ==" << endl
+        //      << "peers\t - List peers currently connected" << endl
+        //      << "services\t - List services currently available" << endl
+        //      << "echo <message>\t - Send a message to peers who support the echo service" << endl
+        //      << "report_temp\t - Report the temperature of peers who support the report_temp "
+        //         "service"
+        //      << "report_mem\t - Report the memory usage of peers who support the report_mem "
+        //         "service"
+        //      << endl
+        //      << "sort\t - Sort a list of numbers using peers who support the sort service" << endl
+        //      << "clear\t - Clear the screen" << endl
+        //      << "help\t - Print this message" << endl
+        //      << "========================" << endl;
         // }
     }
 }

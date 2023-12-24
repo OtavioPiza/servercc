@@ -57,9 +57,8 @@ class DistributedServer {
     DistributedServer(
         absl::string_view interfaceName, absl::string_view group,
         std::vector<absl::string_view> interfaces, const uint16_t port, handler_t default_handler,
-        const std::function<void(absl::string_view, DistributedServer &server)> peerConnectCallback,
-        const std::function<void(absl::string_view string, DistributedServer &server)>
-            peerDisconnectCallback);
+        const std::function<void(in_addr_t, DistributedServer &server)> peerConnectCallback,
+        const std::function<void(in_addr_t, DistributedServer &server)> peerDisconnectCallback);
 
     // Methods
 
@@ -101,17 +100,8 @@ class DistributedServer {
     //
     // Returns:
     //     The ID of the message or an error.
-    std::pair<absl::Status, uint32_t> sendInternalRequest(absl::string_view address,
-                                                          std::unique_ptr<Message> message);
-
-    // Method to wait for a response to a message.
-    //
-    // Arguments:
-    //     id: The ID of the message to wait for.
-    //
-    // Returns:
-    //     The next segment of the response or an error.
-    std::pair<absl::Status, std::unique_ptr<Message>> receiveInternalMessage(const uint32_t id);
+    std::pair<absl::Status, std::shared_ptr<connector_channel_manager_t::request_channel_t>>
+    sendInternalRequest(in_addr_t address, std::unique_ptr<Message> message);
 
    private:
     // Server components.
@@ -139,7 +129,7 @@ class DistributedServer {
     // Peer server datastructures.
 
     // The list of peers connected to the distributed server.
-    absl::flat_hash_set<absl::string_view> peers;
+    absl::flat_hash_set<in_addr_t> peers;
 
     // Handling datastructures.
 
@@ -153,10 +143,10 @@ class DistributedServer {
     // Callbacks.
 
     // The callback to call when a peer connects.
-    const std::function<void(absl::string_view, DistributedServer &server)> peerConnectCallback;
+    const std::function<void(in_addr_t, DistributedServer &server)> peerConnectCallback;
 
     // The callback to call when a peer disconnects.
-    const std::function<void(absl::string_view, DistributedServer &server)> peerDisconnectCallback;
+    const std::function<void(in_addr_t, DistributedServer &server)> peerDisconnectCallback;
 
     // Server service methods.
 
@@ -172,7 +162,13 @@ class DistributedServer {
     //
     // Arguments:
     //     ip: The ip address of the peer that disconnected.
-    void onConnectorDisconnect(absl::string_view ip);
+    void onConnectorDisconnect(in_addr_t ip);
+
+    // Method to forward the specified request to the protocol processors.
+    //
+    // Arguments:
+    //     request: The request to forward.
+    absl::Status forwardRequestToHandler(std::unique_ptr<Request> request);
 
     // Handler methods.
 
@@ -180,37 +176,31 @@ class DistributedServer {
     //
     // Arguments:
     //     request: The request to handle.
-    void handleConnect(std::unique_ptr<Request> request);
+    absl::Status handleConnect(std::unique_ptr<Request> request);
 
     // Method to handle a connect_ack request.
     //
     // Arguments:
     //     request: The request to handle.
-    void handleConnectAck(std::unique_ptr<Request> request);
-
-    // Method to forward the specified request to the protocol processors.
-    //
-    // Arguments:
-    //     request: The request to forward.
-    void forwardRequestToHandler(std::unique_ptr<Request> request);
+    absl::Status handleConnectAck(std::unique_ptr<Request> request);
 
     // Method to handle an internal request.
     //
     // Arguments:
     //     request: The request to handle.
-    void handleInternalRequest(std::unique_ptr<Request> request);
+    absl::Status handleInternalRequest(std::unique_ptr<Request> request);
 
     // Method to handle an internal response.
     //
     // Arguments:
     //     request: The request to handle.
-    void handleInternalResponse(std::unique_ptr<Request> request);
+    absl::Status handleInternalResponse(std::unique_ptr<Request> request);
 
     // Method to handle an internal response end.
     //
     // Arguments:
     //     request: The request to handle.
-    void handleInternalResponseEnd(std::unique_ptr<Request> request);
+    absl::Status handleInternalResponseEnd(std::unique_ptr<Request> request);
 };
 
 }  // namespace ostp::servercc

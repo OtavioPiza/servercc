@@ -1,5 +1,6 @@
 #include "tcp_server.h"
 
+#include "absl/log/log.h"
 #include "tcp_request.h"
 
 namespace ostp::servercc {
@@ -98,7 +99,12 @@ TcpServer::~TcpServer() { close(serverSocketFd); }
             close(clientSocketFd);
             continue;
         }
-        handleRequest(std::make_unique<TcpRequest>(clientSocketFd, clientAddr, std::move(message)));
+        auto res = handleRequest(
+            std::make_unique<TcpRequest>(clientSocketFd, clientAddr, std::move(message)));
+        if (!res.ok()) {
+            LOG(ERROR) << "Failed to handle request: " << res.message();
+            continue;
+        }
     }
 }
 

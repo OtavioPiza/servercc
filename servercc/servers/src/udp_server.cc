@@ -1,5 +1,6 @@
 #include "udp_server.h"
 
+#include "absl/log/log.h"
 #include "udp_request.h"
 
 namespace ostp::servercc {
@@ -120,7 +121,10 @@ UdpServer::~UdpServer() { close(this->serverSocketFd); }
             perror("recvfrom");
             continue;
         }
-        handleRequest(std::make_unique<UdpRequest>(addr, std::move(message)));
+        auto res = handleRequest(std::make_unique<UdpRequest>(addr, std::move(message)));
+        if (!res.ok()) {
+            LOG(ERROR) << "Failed to handle request: " << res.message();
+        }
     }
 }
 

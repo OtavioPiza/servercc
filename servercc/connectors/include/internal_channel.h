@@ -20,9 +20,6 @@ namespace ostp::servercc {
 //     WriteEndProtocol: The protocol used to end the channel.
 template <protocol_t WriteProtocol, protocol_t WriteEndProtocol>
 class InternalChannel {
-    template <protocol_t, protocol_t, protocol_t, protocol_t, protocol_t, channel_id_t>
-    friend class InternalChannelManager;
-
    public:
     // Opens a new channel with the specified ID and write file descriptor.
     //
@@ -31,11 +28,12 @@ class InternalChannel {
     //     writeFd: The write file descriptor of the channel.
     //     writeMutex: The mutex protecting the write operations.
     //     closeCallback: The callback to call when the channel is closed.
-    InternalChannel(channel_id_t id, int writeFd, std::shared_ptr<std::mutex> writeMutex,
-                    std::function<void(channel_id_t)> closeCallback)
+    InternalChannel(const channel_id_t id, const int writeFd,
+                    const std::shared_ptr<std::mutex> writeMutex,
+                    const std::function<void(channel_id_t)> closeCallback)
         : id(id), writeFd(writeFd), writeMutex(writeMutex), closeCallback(closeCallback) {}
 
-    // Sends a message through closing the channel.
+    // Destructor for the channel. Closes the channel by calling close().
     ~InternalChannel() { close(); }
 
     // Reads a message from the channel. Blocks until a message is available.
@@ -55,7 +53,7 @@ class InternalChannel {
         return messageBuffer.pop(timeout);
     }
 
-    // Writes a message to the channel.
+    // Writes a message to the channel delivering it to the other end.
     //
     // Arguments:
     //     message: The message to write.
@@ -63,13 +61,26 @@ class InternalChannel {
     //     A status indicating whether the operation was successful.
     absl::Status write(std::unique_ptr<Message> message) {
         if (isClosed) {
-            return absl::Status(absl::StatusCode::kFailedPrecondition, "Channel is closed");
+            return absl::FailedPreconditionError("Channel is closed");
         }
         writeMutex->lock();
-        auto status = writeMessage(
-            writeFd, std::move(wrapMessage<channel_id_t, WriteProtocol>(id, std::move(message))));
+        auto status =
+            writeMessage(writeFd, wrapMessage<channel_id_t, WriteProtocol>(id, std::move(message)));
         writeMutex->unlock();
         return std::move(status);
+    }
+
+    // Pushes a message to the channel's message buffer to be read by this end.
+    //
+    // Arguments:
+    //     message: The message to push.
+    // Returns:
+    //     A status indicating whether the operation was successful.
+    absl::Status push(std::unique_ptr<Message> message) {
+        if (isClosed) {
+            return absl::FailedPreconditionError("Channel is closed");
+        }
+        return messageBuffer.push(std::move(message));
     }
 
     // Closes the channel.
@@ -77,7 +88,6 @@ class InternalChannel {
         if (isClosed) {
             return;
         }
-        // Close the message buffer used for reading.
         messageBuffer.close();
 
         // Close the channel by sending a close message.
@@ -106,29 +116,16 @@ class InternalChannel {
     const int writeFd;
 
     // Mutex protecting the write operations.
-    std::shared_ptr<std::mutex> writeMutex;
+    const std::shared_ptr<std::mutex> writeMutex;
 
     // The callback to call when the channel is closed.
-    std::function<void(channel_id_t)> closeCallback;
+    const std::function<void(channel_id_t)> closeCallback;
 
     // Whether the channel is closed.
     bool isClosed = false;
 
     // The message buffer used to read messages to the channel.
     ostp::libcc::data_structures::MessageBuffer<std::unique_ptr<Message>> messageBuffer;
-
-    // Pushes a message to the channel's message buffer.
-    //
-    // Arguments:
-    //     message: The message to push.
-    // Returns:
-    //     A status indicating whether the operation was successful.
-    absl::Status push(std::unique_ptr<Message> message) {
-        if (isClosed) {
-            return absl::Status(absl::StatusCode::kFailedPrecondition, "Channel is closed");
-        }
-        return messageBuffer.push(std::move(message));
-    }
 };
 
 }  // namespace ostp::servercc

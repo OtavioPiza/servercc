@@ -20,6 +20,9 @@ class TcpRequest : public virtual Request {
     // The current message.
     std::unique_ptr<Message> message;
 
+    // Whether or not the request should be kept alive.
+    bool keepAlive = false;
+
    public:
     // Constructor for the request.
     //
@@ -49,6 +52,12 @@ class TcpRequest : public virtual Request {
 
     // Terminates the request by closing the socket.
     void terminate() final;
+
+    // Keeps the request alive by not closing the socket.
+    //
+    // Returns:
+    //    The file descriptor of the socket.
+    int setKeepAlive();
 };
 
 }  // namespace ostp::servercc

@@ -1,5 +1,7 @@
 #include "connector.h"
 
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "internal_request.h"
 
 namespace ostp::servercc {
@@ -29,24 +31,19 @@ absl::Status Connector::addHandler(protocol_t protocol, handler_t handler) {
 
 // See connector.h for documentation.
 absl::Status Connector::addClient(std::unique_ptr<TcpClient> client) {
-    // Open the socket and run the client.
-    if (!client->isOpen() && !client->openSocket().ok()) {
-        clientsMutex.unlock();
-        return absl::InternalError("Failed to open socket.");
-    }
+    ASSERT_OK(client->openSocket(), "Failed to open socket for client");
     auto address = client->getClientInAddr();
     auto writeMutex = std::make_shared<std::mutex>();
+    auto channelManager =
+        std::make_shared<connector_channel_manager_t>(client->getClientFd(), writeMutex);
 
     clientsMutex.lock();
-    clients.emplace(address, InternalClient{
+    clients.insert({address, InternalClient{
                                  .client = std::move(client),
-                                 .channelManager = std::make_shared<connector_channel_manager_t>(
-                                     client->getClientFd(), writeMutex),
+                                 .channelManager = channelManager,
                                  .writeMutex = writeMutex,
-                             });
+                             }});
     clientsMutex.unlock();
-
-    writeMutex = nullptr;
 
     // Run the client.
     return runClient(address);

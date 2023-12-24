@@ -8,6 +8,21 @@ target_link_libraries(
 )
 
 
+add_library(clients INTERFACE)
+target_link_libraries(
+    clients
+    INTERFACE
+        client
+        multicast_client
+        tcp_client
+)
+target_include_directories(
+    clients
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+
 add_library(multicast_client ${CMAKE_CURRENT_SOURCE_DIR}/src/multicast_client.cc)
 target_include_directories(
     multicast_client
@@ -41,19 +56,4 @@ target_link_libraries(
         absl::strings
         client
         types
-)
-
-
-add_library(clients INTERFACE)
-target_link_libraries(
-    clients
-    INTERFACE
-        client
-        multicast_client
-        tcp_client
-)
-target_include_directories(
-    clients
-    INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}
 )

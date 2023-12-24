@@ -5,6 +5,7 @@
 
 #include <functional>
 
+#include "include/macros.h"
 #include "include/message.h"
 #include "include/message_body.h"
 #include "include/message_header.h"

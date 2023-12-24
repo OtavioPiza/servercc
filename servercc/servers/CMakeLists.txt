@@ -35,6 +35,7 @@ target_link_libraries(
     tcp_server
     PRIVATE 
         absl::flat_hash_map
+        absl::log
         absl::status
         absl::strings
         server
@@ -71,6 +72,7 @@ target_link_libraries(
     udp_server
     PRIVATE 
         absl::flat_hash_map
+        absl::log
         absl::status
         absl::strings
         server
@@ -91,4 +93,6 @@ target_link_libraries(
         server
         tcp_server
         udp_server
+        tcp_request
+        udp_request
 )

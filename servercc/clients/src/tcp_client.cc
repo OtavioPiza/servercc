@@ -25,7 +25,7 @@ TcpClient::TcpClient(const int socket, const absl::string_view serverAddress, co
 absl::Status TcpClient::openSocket() {
     // If the socket is already open, return.
     if (isSocketOpen) {
-        return absl::Status(absl::StatusCode::kAlreadyExists, "Socket is already open.");
+        return absl::OkStatus();
     }
 
     // Allocate structures for socket address.

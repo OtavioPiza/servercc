@@ -13,7 +13,7 @@ using ostp::servercc::UdpServer;
 
 int main() {
     // Create the default handler.
-    handler_t defaultHandler = [](unique_ptr<Request> request) {
+    handler_t defaultHandler = [](unique_ptr<Request> request) -> absl::Status {
         do {
             auto [status, message] = request->receiveMessage();
             if (!status.ok()) {
@@ -27,6 +27,8 @@ int main() {
                  << endl;
 
         } while (true);
+
+        return absl::OkStatus();
     };
 
     vector<absl::string_view> interfaces = {"127.0.0.1"};

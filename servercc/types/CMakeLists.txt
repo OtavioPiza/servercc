@@ -22,5 +22,7 @@ target_include_directories(
 target_link_libraries(
     types
     INTERFACE
+        absl::status
+        absl::strings
         message_lib
 )

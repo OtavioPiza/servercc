@@ -44,6 +44,16 @@ absl::Status TcpRequest::sendMessage(std::unique_ptr<Message> message) {
 }
 
 // See tcp_request.h for documentation.
-void TcpRequest::terminate() { close(clientSocketFd); }
+void TcpRequest::terminate() {
+    if (!keepAlive) {
+        close(clientSocketFd);
+    }
+}
+
+// See tcp_request.h for documentation.
+int TcpRequest::setKeepAlive() {
+    keepAlive = true;
+    return clientSocketFd;
+}
 
 }  // namespace ostp::servercc

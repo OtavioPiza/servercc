@@ -98,13 +98,13 @@ class Server {
     //
     // Arguments:
     //     request: The request to handle.
-    void handleRequest(std::unique_ptr<ostp::servercc::Request> request) {
+    absl::Status handleRequest(std::unique_ptr<ostp::servercc::Request> request) {
         // Execute the handler for the protocol's request or the default handler.
         ostp::servercc::handler_t handler = handlers[request->getProtocol()];
         if (handler == nullptr) {
             handler = defaultHandler;
         }
-        handler(std::move(request));
+        return handler(std::move(request));
     }
 
     // Virtual methods

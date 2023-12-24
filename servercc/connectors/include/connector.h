@@ -6,7 +6,6 @@
 #include <thread>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "clients.h"
 #include "connector_types.h"
@@ -62,9 +61,9 @@ class Connector {
    private:
     // Represents an internal client with a channel manager and write mutex.
     struct InternalClient {
-        std::shared_ptr<TcpClient> client;
-        std::shared_ptr<connector_channel_manager_t> channelManager;
-        std::shared_ptr<std::mutex> writeMutex;
+        const std::shared_ptr<TcpClient> client;
+        const std::shared_ptr<connector_channel_manager_t> channelManager;
+        const std::shared_ptr<std::mutex> writeMutex;
     };
 
     // The map of protocol handlers.
