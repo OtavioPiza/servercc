@@ -33,7 +33,7 @@ target_include_directories(
 )
 target_link_libraries(
     multicast_client
-    PRIVATE 
+    PRIVATE
         absl::status
         absl::strings
         client
@@ -51,7 +51,7 @@ target_include_directories(
 )
 target_link_libraries(
     tcp_client
-    PRIVATE 
+    PRIVATE
         absl::status
         absl::strings
         client

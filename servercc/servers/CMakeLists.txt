@@ -17,7 +17,7 @@ target_include_directories(
 )
 target_link_libraries(
     tcp_request
-    PRIVATE 
+    PRIVATE
         absl::status
         types
 )
@@ -33,7 +33,7 @@ target_include_directories(
 )
 target_link_libraries(
     tcp_server
-    PRIVATE 
+    PRIVATE
         absl::flat_hash_map
         absl::log
         absl::status
@@ -54,7 +54,7 @@ target_include_directories(
 )
 target_link_libraries(
     udp_request
-    PRIVATE 
+    PRIVATE
         absl::status
         types
 )
@@ -70,7 +70,7 @@ target_include_directories(
 )
 target_link_libraries(
     udp_server
-    PRIVATE 
+    PRIVATE
         absl::flat_hash_map
         absl::log
         absl::status

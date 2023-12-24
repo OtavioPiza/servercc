@@ -8,21 +8,22 @@ target_include_directories(
 )
 target_link_libraries(
     connector
-    PRIVATE 
+    PRIVATE
         absl::flat_hash_map
         absl::log
         absl::status
         absl::strings
         clients
-        libcc
         types
+    PUBLIC
+        libcc   # TODO: figure out how to make this private
 )
 
 
 add_library(connectors INTERFACE)
 target_include_directories(
-    connector 
-    INTERFACE 
+    connector
+    INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(
     connectors
@@ -41,11 +42,12 @@ target_include_directories(
 )
 target_link_libraries(
     internal_channel
-    PRIVATE 
+    PRIVATE
         absl::status
         absl::log
         types
-        libcc
+    PUBLIC
+        libcc   # TODO: figure out how to make this private
 )
 
 
@@ -59,7 +61,9 @@ target_include_directories(
 )
 target_link_libraries(
     internal_channel_manager
-    PRIVATE 
+    PRIVATE
         internal_channel
         types
+    PUBLIC
+        libcc   # TODO: figure out how to make this private
 )
