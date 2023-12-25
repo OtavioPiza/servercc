@@ -32,13 +32,13 @@ class InternalChannel {
                     const std::shared_ptr<std::mutex> writeMutex,
                     const std::function<void(channel_id_t)> closeCallback)
         : id(id), writeFd(writeFd), writeMutex(writeMutex), closeCallback(closeCallback) {
-        LOG(INFO) << "Opened channel " << id;
+        LOG(INFO) << "Constructed channel " << id;
     }
 
     // Destructor for the channel. Closes the channel by calling close().
     ~InternalChannel() {
         close();
-        LOG(INFO) << "Closed channel " << id;
+        LOG(INFO) << "Destructed channel " << id;
     }
 
     // Reads a message from the channel. Blocks until a message is available.
@@ -93,8 +93,8 @@ class InternalChannel {
         if (isClosed) {
             return;
         }
-        LOG(INFO) << "Closing channel " << id;
         messageBuffer.close();
+        LOG(INFO) << "Closed channel " << id;
 
         // Close the channel by sending a close message.
         auto closeMessage = std::make_unique<Message>();

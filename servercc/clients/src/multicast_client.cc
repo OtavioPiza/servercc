@@ -1,5 +1,7 @@
 #include "multicast_client.h"
 
+#include "absl/log/log.h"
+
 namespace ostp::servercc {
 
 // See udp_client.h for documentation.
@@ -19,20 +21,20 @@ absl::Status MulticastClient::openSocket() {
     int socketFd = socket(AF_INET, SOCK_DGRAM, 0);
     if (socketFd < 0) {
         perror("socket");
-        return absl::InternalError("Failed to create socket.");
+        return absl::InternalError("Failed to create socket");
     }
 
     // Set the socket options.
     if (setsockopt(socketFd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0) {
         perror("setsockopt ttl");
-        return absl::InternalError("Failed to set socket TTL option.");
+        return absl::InternalError("Failed to set socket TTL option");
     }
 
     // Set the socket interface.
     if (setsockopt(socketFd, SOL_SOCKET, SO_BINDTODEVICE, interface.data(), interface.length()) <
         0) {
         perror("setsockopt interface");
-        return absl::InternalError("Failed to set socket interface.");
+        return absl::InternalError("Failed to set socket interface");
     }
 
     // Set the address.
@@ -44,8 +46,8 @@ absl::Status MulticastClient::openSocket() {
     // Set the file descriptor.
     clientFd = socketFd;
     isSocketOpen = true;
-
-    // Return.
+    LOG(INFO) << "Opened socket " << clientFd << " for multicast client on interface " << interface
+              << " to " << getAddress() << ":" << getPort();
     return absl::OkStatus();
 }
 
@@ -55,19 +57,12 @@ absl::Status MulticastClient::closeSocket() {
     if (!isSocketOpen) {
         return absl::OkStatus();
     }
-
-    // Close the socket.
-    if (close(clientFd) < 0) {
-        perror("close");
-        return absl::InternalError("Failed to close socket.");
-    }
-
-    // Set the socket file and return.
+    close(clientFd);
+    LOG(INFO) << "Closed socket " << clientFd << " for multicast client on interface " << interface
+              << " to " << getAddress() << ":" << getPort();
     clientFd = -1;
     isSocketOpen = false;
     clientAddr = {};
-
-    // Return.
     return absl::OkStatus();
 };
 
@@ -75,7 +70,7 @@ absl::Status MulticastClient::closeSocket() {
 absl::Status MulticastClient::sendMessage(std::unique_ptr<Message> message) {
     // If the socket is not open, return.
     if (!isSocketOpen) {
-        return absl::FailedPreconditionError("Socket is not open.");
+        return absl::FailedPreconditionError("Socket is not open");
     }
 
     // Send the message.
@@ -83,13 +78,13 @@ absl::Status MulticastClient::sendMessage(std::unique_ptr<Message> message) {
                        sizeof(clientAddr));
     if (sent < kMessageHeaderLength) {
         perror("sendto header");
-        return absl::InternalError("Failed to send message header.");
+        return absl::InternalError("Failed to send message header");
     }
     sent = sendto(clientFd, message->body.data.data(), message->header.length, 0, &clientAddr,
                   sizeof(clientAddr));
     if (sent < message->header.length) {
         perror("sendto body");
-        return absl::InternalError("Failed to send message body.");
+        return absl::InternalError("Failed to send message body");
     }
     return absl::OkStatus();
 }
@@ -98,7 +93,7 @@ absl::Status MulticastClient::sendMessage(std::unique_ptr<Message> message) {
 std::pair<absl::Status, std::unique_ptr<Message>> MulticastClient::receiveMessage() {
     // If the socket is not open, return.
     if (!isSocketOpen) {
-        return {absl::FailedPreconditionError("Socket is not open."), nullptr};
+        return {absl::FailedPreconditionError("Socket is not open"), nullptr};
     }
 
     // Receive the message.

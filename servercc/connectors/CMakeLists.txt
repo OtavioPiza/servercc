@@ -43,8 +43,8 @@ target_include_directories(
 target_link_libraries(
     internal_channel
     PRIVATE
-        absl::status
         absl::log
+        absl::status
         types
     PUBLIC
         libcc   # TODO: figure out how to make this private
@@ -62,6 +62,8 @@ target_include_directories(
 target_link_libraries(
     internal_channel_manager
     PRIVATE
+        absl::log
+        absl::status
         internal_channel
         types
     PUBLIC

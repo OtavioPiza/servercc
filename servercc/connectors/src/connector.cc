@@ -22,7 +22,7 @@ absl::Status Connector::addHandler(protocol_t protocol, handler_t handler) {
     handlersMutex.lock();
     if (handlers.contains(protocol)) {
         handlersMutex.unlock();
-        return absl::AlreadyExistsError("Handler already exists for protocol.");
+        return absl::AlreadyExistsError("Handler already exists for protocol");
     }
     handlers.emplace(protocol, handler);
     handlersMutex.unlock();
@@ -40,7 +40,7 @@ absl::Status Connector::addClient(std::unique_ptr<TcpClient> client) {
     clientsMutex.lock();
     if (clients.contains(address)) {
         clientsMutex.unlock();
-        return absl::AlreadyExistsError("Client already exists.");
+        return absl::AlreadyExistsError("Client already exists");
     }
     clients.emplace(address, InternalClient(std::move(client), writeMutex, channelManager));
     client = nullptr;
@@ -79,7 +79,7 @@ absl::Status Connector::runClient(in_addr_t address) {
     auto clientIt = clients.find(address);
     if (clientIt == clients.end()) {
         clientsMutex.unlock();
-        return absl::NotFoundError("Client does not exist.");
+        return absl::NotFoundError("Client does not exist");
     }
     clientsMutex.unlock();
     auto client = clientIt->second.client;

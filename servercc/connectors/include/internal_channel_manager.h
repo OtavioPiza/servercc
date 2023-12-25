@@ -57,7 +57,7 @@ class InternalChannelManager {
 
     // Destructor for the channel manager. Closes all channels by calling close().
     ~InternalChannelManager() {
-        LOG(INFO) << "Closing all channels.";
+        LOG(INFO) << "Closing all channels for channel manager on write fd " << writeFd;
         for (channel_id_t i = 0; i < MaxChannels; i++) {
             removeResponseChannel(i);
             removeRequestChannel(i);
@@ -95,7 +95,8 @@ class InternalChannelManager {
                 return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
                         nullptr};
             }
-            return {requestChannel[id]->push(std::move(unwrapped)), unwrappedHeaderProtocol, nullptr};
+            return {requestChannel[id]->push(std::move(unwrapped)), unwrappedHeaderProtocol,
+                    nullptr};
 
         } else if (protocol == ResponseEndProtocol) {
             if (requestChannel[id] == nullptr) {
@@ -125,8 +126,8 @@ class InternalChannelManager {
         }
 
         else {
-            return {absl::Status(absl::StatusCode::kInvalidArgument, "Invalid protocol"),
-                    unwrappedHeaderProtocol, nullptr};
+            return {absl::InvalidArgumentError("Invalid protocol"), unwrappedHeaderProtocol,
+                    nullptr};
         }
     }
 
@@ -145,8 +146,8 @@ class InternalChannelManager {
         // Create the channel.
         requestChannel[id] = std::make_shared<InternalChannel<RequestProtocol, RequestEndProtocol>>(
             id, writeFd, writeMutex, [this](channel_id_t id) { this->removeRequestChannel(id); });
-
-        // Return the channel ID.
+        LOG(INFO) << "Created request channel " << id << " for channel manager on write fd "
+                  << writeFd;
         return {absl::OkStatus(), requestChannel[id]};
     }
 
@@ -187,6 +188,8 @@ class InternalChannelManager {
             std::make_shared<InternalChannel<ResponseProtocol, ResponseEndProtocol>>(
                 id, writeFd, writeMutex,
                 [this](channel_id_t id) { this->removeResponseChannel(id); });
+        LOG(INFO) << "Created response channel " << id << " for channel manager on write fd "
+                  << writeFd;
         return absl::OkStatus();
     }
 
@@ -198,9 +201,9 @@ class InternalChannelManager {
         if (responseChannel[id] == nullptr) {
             return;
         }
-        LOG(INFO) << "Removing response channel " << id << "from manager, "
-                  << responseChannel[id].use_count() << "users." << std::endl;
         responseChannel[id]->close();
+        LOG(INFO) << "Removed response channel " << id << "from manager, "
+                  << responseChannel[id].use_count() << "users";
         responseChannel[id] = nullptr;
     }
 
@@ -213,9 +216,9 @@ class InternalChannelManager {
         if (requestChannel[id] == nullptr) {
             return;
         }
-        LOG(INFO) << "Removing request channel " << id << "from manager, "
-                  << requestChannel[id].use_count() << "users." << std::endl;
         requestChannel[id]->close();
+        LOG(INFO) << "Removed request channel " << id << "from manager, "
+                  << requestChannel[id].use_count() - 1 << "users remain";
         requestChannel[id] = nullptr;
 
         // Add the channel ID to the free list.
