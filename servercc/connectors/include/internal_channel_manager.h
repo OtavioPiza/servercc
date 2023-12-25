@@ -146,7 +146,7 @@ class InternalChannelManager {
         // Create the channel.
         requestChannel[id] = std::make_shared<InternalChannel<RequestProtocol, RequestEndProtocol>>(
             id, writeFd, writeMutex, [this](channel_id_t id) { this->removeRequestChannel(id); });
-        LOG(INFO) << "Created request channel " << id << " for channel manager on write fd "
+        LOG(INFO) << "Opened request channel " << id << " for channel manager on write fd "
                   << writeFd;
         return {absl::OkStatus(), requestChannel[id]};
     }
@@ -188,7 +188,7 @@ class InternalChannelManager {
             std::make_shared<InternalChannel<ResponseProtocol, ResponseEndProtocol>>(
                 id, writeFd, writeMutex,
                 [this](channel_id_t id) { this->removeResponseChannel(id); });
-        LOG(INFO) << "Created response channel " << id << " for channel manager on write fd "
+        LOG(INFO) << "Opened response channel " << id << " for channel manager on write fd "
                   << writeFd;
         return absl::OkStatus();
     }
@@ -203,7 +203,7 @@ class InternalChannelManager {
         }
         responseChannel[id]->close();
         LOG(INFO) << "Removed response channel " << id << " from manager, "
-                  << responseChannel[id].use_count() << " users";
+                  << responseChannel[id].use_count() - 1 << " users remain";
         responseChannel[id] = nullptr;
     }
 

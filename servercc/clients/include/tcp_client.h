@@ -27,6 +27,9 @@ class TcpClient : virtual public Client {
     TcpClient(const int socket, const absl::string_view server_address, const uint16_t port,
               sockaddr client_addr);
 
+    // Destructor that closes the socket.
+    ~TcpClient();
+
     // Client methods.
 
     // See abstract_client.h

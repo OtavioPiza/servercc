@@ -27,6 +27,9 @@ class MulticastClient : virtual public Client {
     MulticastClient(const absl::string_view interface, const absl::string_view multicastGroup,
                     const uint16_t port, const uint8_t ttl);
 
+    // Destructor that closes the socket.
+    ~MulticastClient();
+
     // Client methods.
 
     // See abstract_client.h

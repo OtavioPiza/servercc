@@ -98,12 +98,18 @@ if (${PROJECT_IS_TOP_LEVEL} AND BUILD_DEMOS)
         distributed_demo
             ${PROJECT_NAME}
             absl::log
+            absl::log_globals
+            absl::log_initialize
+            absl::log_severity
     )
 
     add_executable(multicast_client_demo demos/multicast_client_demo.cc)
     target_link_libraries(
         multicast_client_demo
             ${PROJECT_NAME}
+            absl::log_globals
+            absl::log_initialize
+            absl::log_severity
             absl::strings
     )
 
@@ -111,18 +117,27 @@ if (${PROJECT_IS_TOP_LEVEL} AND BUILD_DEMOS)
     target_link_libraries(
         tcp_client_demo
             ${PROJECT_NAME}
+            absl::log_globals
+            absl::log_initialize
+            absl::log_severity
     )
 
     add_executable(tcp_server_demo demos/tcp_server_demo.cc)
     target_link_libraries(
         tcp_server_demo
             ${PROJECT_NAME}
+            absl::log_globals
+            absl::log_initialize
+            absl::log_severity
     )
 
     add_executable(udp_server_demo demos/udp_server_demo.cc)
     target_link_libraries(
         udp_server_demo
             ${PROJECT_NAME}
+            absl::log_globals
+            absl::log_initialize
+            absl::log_severity
     )
 
 endif()

@@ -75,6 +75,8 @@ TcpServer::TcpServer(int16_t port, handler_t defaultProcessor) : Server(port, de
     // Save the server address.
     this->serverSocketFd = serverSocketFd;
     this->serverAddress = addr;
+
+    LOG(INFO) << "Created TCP server on port " << port << " with socket fd " << serverSocketFd;
 }
 
 // See tcp.h for documentation.
@@ -83,7 +85,9 @@ TcpServer::~TcpServer() { close(serverSocketFd); }
 // See server.h for documentation.
 [[noreturn]] void TcpServer::run() {
     sockaddr clientAddr;
+    in_addr_t clientAddrIp;
     socklen_t addr_len = sizeof(clientAddr);
+    char ipStr[INET_ADDRSTRLEN];
     int clientSocketFd;
     while (true) {
         // Try to accept a connection.
@@ -91,6 +95,12 @@ TcpServer::~TcpServer() { close(serverSocketFd); }
             perror("accept");
             continue;
         }
+
+        // Log the connection.
+        clientAddrIp = ((sockaddr_in *)&clientAddr)->sin_addr.s_addr;
+        inet_ntop(AF_INET, &clientAddrIp, ipStr, INET_ADDRSTRLEN);
+        LOG(INFO) << "Opened TCP connection with '" << ipStr << "' with socket fd "
+                  << clientSocketFd;
 
         // Create a request checking for errors.
         auto [status, message] = readMessage(clientSocketFd);

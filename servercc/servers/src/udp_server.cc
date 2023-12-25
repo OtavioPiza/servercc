@@ -95,6 +95,9 @@ UdpServer::UdpServer(int16_t port, absl::string_view groupAddress,
     // Save the server address.
     this->serverAddress = addr;
     this->serverSocketFd = server_socket_fd;
+
+    LOG(INFO) << "Created UDP server on port " << port << " with socket fd " << server_socket_fd
+              << " and group address " << this->groupAddress;
 }
 
 // See tcp.h for documentation.

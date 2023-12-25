@@ -1,5 +1,7 @@
 #include "tcp_request.h"
 
+#include "absl/log/log.h"
+
 namespace ostp::servercc {
 
 // See tcp_request.h for documentation.
@@ -46,6 +48,7 @@ absl::Status TcpRequest::sendMessage(std::unique_ptr<Message> message) {
 // See tcp_request.h for documentation.
 void TcpRequest::terminate() {
     if (!keepAlive) {
+        LOG(INFO) << "Closed TCP connection with socket fd " << clientSocketFd;
         close(clientSocketFd);
     }
 }

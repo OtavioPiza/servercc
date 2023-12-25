@@ -12,9 +12,6 @@ target_link_libraries(
         absl::flat_hash_map
         absl::flat_hash_set
         absl::log
-        absl::log_globals
-        absl::log_initialize
-        absl::log_severity
         absl::status
         absl::strings
         clients

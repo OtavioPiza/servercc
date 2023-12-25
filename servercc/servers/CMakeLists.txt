@@ -18,6 +18,7 @@ target_include_directories(
 target_link_libraries(
     tcp_request
     PRIVATE
+        absl::log
         absl::status
         types
 )

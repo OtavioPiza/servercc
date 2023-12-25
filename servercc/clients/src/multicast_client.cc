@@ -11,6 +11,9 @@ MulticastClient::MulticastClient(const absl::string_view interface,
     : Client(multicast_group, port), interface(interface), ttl(ttl) {}
 
 // See udp_client.h for documentation.
+MulticastClient::~MulticastClient() { closeSocket(); }
+
+// See udp_client.h for documentation.
 absl::Status MulticastClient::openSocket() {
     // If the socket is already open, return.
     if (isSocketOpen) {
