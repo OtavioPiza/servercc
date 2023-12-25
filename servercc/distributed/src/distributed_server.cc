@@ -125,9 +125,9 @@ absl::Status DistributedServer::sendConnectMessage() {
 }
 
 // See distributed.h for documentation.
-std::pair<absl::Status, std::shared_ptr<connector_channel_manager_t::request_channel_t>>
-DistributedServer::sendInternalRequest(in_addr_t address, std::unique_ptr<Message> message) {
-    return connector.sendRequest(address, std::move(message));
+std::pair<absl::Status, std::unique_ptr<Request>>
+DistributedServer::sendInternalRequest(in_addr_t address) {
+    return connector.sendRequest(address);
 }
 
 // See distributed.h for documentation.

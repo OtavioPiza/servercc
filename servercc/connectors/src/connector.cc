@@ -50,8 +50,8 @@ absl::Status Connector::addClient(std::unique_ptr<TcpClient> client) {
 }
 
 // See connector.h for documentation.
-std::pair<absl::Status, std::shared_ptr<connector_channel_manager_t::request_channel_t>>
-Connector::sendRequest(in_addr_t address, std::unique_ptr<Message> message) {
+std::pair<absl::Status, std::unique_ptr<Request>>
+Connector::sendRequest(in_addr_t address) {
     // Check if the client exists.
     clientsMutex.lock();
     auto clientIt = clients.find(address);
@@ -66,7 +66,7 @@ Connector::sendRequest(in_addr_t address, std::unique_ptr<Message> message) {
     if (!status.ok()) {
         return {status, nullptr};
     }
-    return {channel->write(std::move(message)), channel};
+    return {absl::OkStatus(), std::make_unique<connector_internal_request_t>(channel)};
 }
 
 // Private methods.
@@ -116,7 +116,7 @@ absl::Status Connector::runClient(in_addr_t address) {
             // If a new channel was created, create a new request with the channel ID and
             // start a new thread to process it.
             if (fwdChannel != nullptr) {
-                auto request = std::make_unique<connector_request_t>(
+                auto request = std::make_unique<connector_internal_response_t>(
                     fwdProtocol, client->getClientAddr(), fwdChannel);
 
                 // Process the request.

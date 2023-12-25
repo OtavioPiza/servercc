@@ -144,16 +144,21 @@ int main(int argc, char *argv[]) {
                 echoMessage->header.length = message.size();
                 echoMessage->body.data = vector<uint8_t>(message.begin(), message.end());
 
-                auto [status, channel] = server.sendInternalRequest(ipAddr, std::move(echoMessage));
+
+                auto [status, request] = server.sendInternalRequest(ipAddr);
                 if (!status.ok()) {
-                    cout << "Failed to send echo request: " << status.message() << endl;
+                    cout << "Failed to open channel to peer: " << status.message() << endl;
                     break;
                 }
 
-                auto [rcvStatus, reply] = channel->read();
+                if (!request->sendMessage(std::move(echoMessage)).ok()) {
+                    cout << "Failed to send echo request" << endl;
+                    break;
+                }
+
+                auto [rcvStatus, reply] = request->receiveMessage();
                 if (!rcvStatus.ok()) {
                     cout << "Failed to receive echo reply: " << rcvStatus.message() << endl;
-                    channel->close();
                     break;
                 }
                 cout << "Echo reply: '" << string(reply->body.data.begin(), reply->body.data.end())

@@ -18,7 +18,11 @@ typedef InternalChannelManager<kInternalRequestProtocol, kInternalRequestEndProt
 
 // The type of the connector request.
 typedef InternalRequest<kInternalResponseProtocol, kInternalResponseEndProtocol>
-    connector_request_t;
+    connector_internal_response_t;
+
+// The type of the connector response.
+typedef InternalRequest<kInternalRequestProtocol, kInternalRequestEndProtocol>
+    connector_internal_request_t;
 
 // The type of the connector handler.
 typedef internal_handler_t<kInternalResponseProtocol, kInternalResponseEndProtocol>

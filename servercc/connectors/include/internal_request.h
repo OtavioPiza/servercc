@@ -24,6 +24,13 @@ class InternalRequest : public virtual Request {
                     std::shared_ptr<InternalChannel<ResponseProtocol, ResponseEndProtocol>> channel)
         : protocol(protocol), addr(addr), channel(channel) {}
 
+    // Constructs a new request.
+    //
+    // Arguments:
+    //     channel: The internal channel that the request is using to communicate.
+    InternalRequest(std::shared_ptr<InternalChannel<ResponseProtocol, ResponseEndProtocol>> channel)
+        : protocol(0), addr({}), channel(channel) {}
+
     // See request.h for documentation.
     ~InternalRequest() final { terminate(); }
 
@@ -49,9 +56,7 @@ class InternalRequest : public virtual Request {
     }
 
     // See request.h for documentation.
-    void terminate() final {
-        channel->close();
-    }
+    void terminate() final { channel->close(); }
 
    private:
     // The protocol of the first message.

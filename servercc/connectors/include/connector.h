@@ -51,12 +51,11 @@ class Connector {
     //
     // Arguments:
     //     address: The address of the client to send the message to.
-    //     message: The message to send.
     //
     // Returns:
-    //     The number of bytes sent if successful, otherwise an error.
-    std::pair<absl::Status, std::shared_ptr<connector_channel_manager_t::request_channel_t>>
-    sendRequest(in_addr_t address, std::unique_ptr<Message> message);
+    //     The status ofr the operation and a request if successful.
+    std::pair<absl::Status, std::unique_ptr<Request>>
+    sendRequest(in_addr_t address);
 
    private:
     // Represents an internal client with a channel manager and write mutex.

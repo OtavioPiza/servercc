@@ -100,8 +100,8 @@ class DistributedServer {
     //
     // Returns:
     //     The ID of the message or an error.
-    std::pair<absl::Status, std::shared_ptr<connector_channel_manager_t::request_channel_t>>
-    sendInternalRequest(in_addr_t address, std::unique_ptr<Message> message);
+    std::pair<absl::Status, std::unique_ptr<Request>>
+    sendInternalRequest(in_addr_t address);
 
    private:
     // Server components.

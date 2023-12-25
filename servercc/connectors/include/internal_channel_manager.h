@@ -73,21 +73,35 @@ class InternalChannelManager {
     //    one was created.
     std::tuple<absl::Status, protocol_t, std::shared_ptr<response_channel_t>> forwardMessage(
         std::unique_ptr<Message> message) {
-        // Unwrap the message.
+        // If the message is a response end or request end message remove the channel.
         auto protocol = message->header.protocol;
+        if (protocol == ResponseEndProtocol) {
+            channel_id_t id;
+            memcpy(&id, message->body.data.data(), sizeof(channel_id_t));
+            if (requestChannel[id]) {
+                removeRequestChannel(id);
+            }
+            return {absl::OkStatus(), protocol, nullptr};
+
+        } else if (protocol == RequestEndProtocol) {
+            channel_id_t id;
+            memcpy(&id, message->body.data.data(), sizeof(channel_id_t));
+            if (responseChannel[id]) {
+                removeResponseChannel(id);
+            }
+            return {absl::OkStatus(), protocol, nullptr};
+        }
+
+        // Otherwise try to unwrap the message and forward it to the appropriate channel.
         auto [status, channelId, unwrapped] = unwrapMessage<channel_id_t>(std::move(message));
         if (!status.ok()) {
             return {status, -1, nullptr};
         }
         auto unwrappedHeaderProtocol = unwrapped->header.protocol;
-
-        // Get the channel ID.
         auto id = *channelId;
 
-        // If the protocol is a response push the message to the requesting channel. Else if the
-        // protocol is a response end close the requesting channel. Else if the protocol is a
-        // request push the message to the responding channel. Else if the protocol is a request
-        // end close the responding channel. Else return an error.
+        // If the protocol is a response push the message to the requesting channel. Otherwise if
+        // the protocol is a request push the message to the responding channel.
         if (protocol == ResponseProtocol) {
             if (requestChannel[id] == nullptr) {
                 return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
@@ -95,14 +109,6 @@ class InternalChannelManager {
             }
             return {requestChannel[id]->push(std::move(unwrapped)), unwrappedHeaderProtocol,
                     nullptr};
-
-        } else if (protocol == ResponseEndProtocol) {
-            if (requestChannel[id] == nullptr) {
-                return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
-                        nullptr};
-            }
-            removeRequestChannel(id);
-            return {absl::OkStatus(), unwrappedHeaderProtocol, nullptr};
 
         } else if (protocol == RequestProtocol) {
             // Check if the channel exists otherwise try to create it.
@@ -113,17 +119,7 @@ class InternalChannelManager {
             return {responseChannel[id]->push(std::move(unwrapped)), unwrappedHeaderProtocol,
                     responseChannel[id]};
 
-        } else if (protocol == RequestEndProtocol) {
-            // Check if the channel exists.
-            if (responseChannel[id] == nullptr) {
-                return {absl::NotFoundError("Channel does not exist"), unwrappedHeaderProtocol,
-                        nullptr};
-            }
-            removeResponseChannel(id);
-            return {absl::OkStatus(), unwrappedHeaderProtocol, nullptr};
-        }
-
-        else {
+        } else {
             return {absl::InvalidArgumentError("Invalid protocol"), unwrappedHeaderProtocol,
                     nullptr};
         }
@@ -201,8 +197,7 @@ class InternalChannelManager {
         }
         auto channel = std::move(responseChannel[id]);
         channel->close();
-        LOG(INFO) << "Removed response channel " << id << " from manager, "
-                  << channel.use_count() - 1 << " users remain";
+        LOG(INFO) << "Removed response channel " << id << " from manager";
     }
 
     // Removes the request channel with the specified ID from the channel manager and returns the
@@ -216,8 +211,7 @@ class InternalChannelManager {
         }
         auto channel = std::move(requestChannel[id]);
         channel->close();
-        LOG(INFO) << "Removed request channel " << id << " from manager, "
-                  << channel.use_count() - 1 << " users remain";
+        LOG(INFO) << "Removed request channel " << id << " from manager";
 
         // Add the channel ID to the free list.
         freeListMutex.lock();
