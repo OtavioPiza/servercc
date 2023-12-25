@@ -24,7 +24,6 @@ protocol_t TcpRequest::getProtocol() { return protocol; }
 std::pair<absl::Status, std::unique_ptr<Message>> TcpRequest::receiveMessage() {
     if (message) {
         auto temp = std::move(message);
-        message = nullptr;
         return {absl::OkStatus(), std::move(temp)};
     }
     return readMessage(clientSocketFd);
@@ -34,7 +33,6 @@ std::pair<absl::Status, std::unique_ptr<Message>> TcpRequest::receiveMessage() {
 std::pair<absl::Status, std::unique_ptr<Message>> TcpRequest::receiveMessage(int timeout) {
     if (message) {
         auto temp = std::move(message);
-        message = nullptr;
         return {absl::OkStatus(), std::move(temp)};
     }
     return readMessage(clientSocketFd, timeout);

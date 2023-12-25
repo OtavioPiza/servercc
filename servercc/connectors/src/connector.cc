@@ -43,7 +43,6 @@ absl::Status Connector::addClient(std::unique_ptr<TcpClient> client) {
         return absl::AlreadyExistsError("Client already exists");
     }
     clients.emplace(address, InternalClient(std::move(client), writeMutex, channelManager));
-    client = nullptr;
     clientsMutex.unlock();
 
     // Run the client.

@@ -20,9 +20,7 @@ protocol_t UdpRequest::getProtocol() { return protocol; }
 // See tcp_request.h for documentation.
 std::pair<absl::Status, std::unique_ptr<Message>> UdpRequest::receiveMessage() {
     if (message) {
-        auto temp = std::move(message);
-        message = nullptr;
-        return {absl::OkStatus(), std::move(temp)};
+        return {absl::OkStatus(), std::move(message)};
     }
     return {absl::NotFoundError("No remaining messages"), nullptr};
 }

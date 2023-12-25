@@ -217,7 +217,6 @@ absl::Status DistributedServer::handleConnect(std::unique_ptr<Request> request) 
         return absl::InternalError(absl::StrCat("Failed to send connectAck to peer server '", ipStr,
                                                 "': ", sendStatus.message()));
     }
-    connectAckMessage = nullptr;
 
     // If the peer server did not send a connectAck then close the socket and return.
     auto [receiveStatus, ackResponse] = peerServer->receiveMessage();
@@ -226,7 +225,6 @@ absl::Status DistributedServer::handleConnect(std::unique_ptr<Request> request) 
         return absl::InternalError(absl::StrCat("Failed to receive connect end from peer server '",
                                                 ipStr, "': ", receiveStatus.message()));
     }
-    ackResponse = nullptr;
 
     // Add the peer server to the connector and mappings.
     auto connectorStatus = connector.addClient(std::move(peerServer));
@@ -235,7 +233,6 @@ absl::Status DistributedServer::handleConnect(std::unique_ptr<Request> request) 
         return absl::InternalError(absl::StrCat("Failed to add peer server '", ipStr,
                                                 "' to connector: ", connectorStatus.message()));
     }
-    peerServer = nullptr;
 
     // Call the peer connect callback.
     if (peerConnectCallback != nullptr) {
@@ -267,7 +264,6 @@ absl::Status DistributedServer::handleConnectAck(std::unique_ptr<Request> reques
 
     // Try to cast request to TcpRequest.
     auto tcpRequest = std::unique_ptr<TcpRequest>(dynamic_cast<TcpRequest *>(request.release()));
-    request = nullptr;
     if (tcpRequest == nullptr) {
         return absl::InternalError("Failed to cast request to TcpRequest");
     }

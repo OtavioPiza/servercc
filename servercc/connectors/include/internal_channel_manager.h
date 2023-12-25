@@ -76,7 +76,6 @@ class InternalChannelManager {
         // Unwrap the message.
         auto protocol = message->header.protocol;
         auto [status, channelId, unwrapped] = unwrapMessage<channel_id_t>(std::move(message));
-        message = nullptr;
         if (!status.ok()) {
             return {status, -1, nullptr};
         }
@@ -84,7 +83,6 @@ class InternalChannelManager {
 
         // Get the channel ID.
         auto id = *channelId;
-        channelId = nullptr;
 
         // If the protocol is a response push the message to the requesting channel. Else if the
         // protocol is a response end close the requesting channel. Else if the protocol is a
@@ -201,10 +199,10 @@ class InternalChannelManager {
         if (responseChannel[id] == nullptr) {
             return;
         }
-        responseChannel[id]->close();
+        auto channel = std::move(responseChannel[id]);
+        channel->close();
         LOG(INFO) << "Removed response channel " << id << " from manager, "
-                  << responseChannel[id].use_count() - 1 << " users remain";
-        responseChannel[id] = nullptr;
+                  << channel.use_count() - 1 << " users remain";
     }
 
     // Removes the request channel with the specified ID from the channel manager and returns the
@@ -216,10 +214,10 @@ class InternalChannelManager {
         if (requestChannel[id] == nullptr) {
             return;
         }
-        requestChannel[id]->close();
+        auto channel = std::move(requestChannel[id]);
+        channel->close();
         LOG(INFO) << "Removed request channel " << id << " from manager, "
-                  << requestChannel[id].use_count() - 1 << " users remain";
-        requestChannel[id] = nullptr;
+                  << channel.use_count() - 1 << " users remain";
 
         // Add the channel ID to the free list.
         freeListMutex.lock();
