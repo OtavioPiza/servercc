@@ -93,14 +93,14 @@ absl::Status DistributedServer::run() {
             return absl::OkStatus();
         }
     }
-    return absl::InternalError("Failed to connect to multicast group.");
+    return absl::InternalError("Failed to connect to multicast group");
 }
 
 // See distributed.h for documentation.
 absl::Status DistributedServer::addHandler(protocol_t protocol, handler_t handler) {
     // Check if the protocol is already registered.
     if (handlers.contains(protocol)) {
-        return absl::AlreadyExistsError("Handler already exists for protocol.");
+        return absl::AlreadyExistsError("Handler already exists for protocol");
     }
     handlers.insert({protocol, handler});
     return absl::OkStatus();
@@ -109,7 +109,7 @@ absl::Status DistributedServer::addHandler(protocol_t protocol, handler_t handle
 // See distributed.h for documentation.
 absl::Status DistributedServer::multicastMessage(std::unique_ptr<Message> message) {
     if (!multicastClient.isOpen() && !multicastClient.openSocket().ok()) {
-        return absl::InternalError("Failed to open socket.");
+        return absl::InternalError("Failed to open socket");
     }
     return std::move(multicastClient.sendMessage(std::move(message)));
 }
@@ -134,7 +134,7 @@ DistributedServer::sendInternalRequest(in_addr_t address, std::unique_ptr<Messag
 absl::Status DistributedServer::runTcpServer() {
     // TODO Create setup phase to catch errors early
     tcpServerThread = std::thread([this]() {
-        LOG(INFO) << "Running TCP server.";
+        LOG(INFO) << "Running TCP server";
         this->tcpServer.run();
     });
     return absl::OkStatus();
@@ -144,7 +144,7 @@ absl::Status DistributedServer::runTcpServer() {
 absl::Status DistributedServer::runUdpServer() {
     // TODO create setup phase to catch errors early
     udpServerThread = std::thread([this]() {
-        LOG(INFO) << "Running UDP server.";
+        LOG(INFO) << "Running UDP server";
         this->udpServer.run();
     });
     return absl::OkStatus();
@@ -154,18 +154,6 @@ absl::Status DistributedServer::runUdpServer() {
 void DistributedServer::onConnectorDisconnect(in_addr_t ip) {
     char ipStr[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &ip, ipStr, INET_ADDRSTRLEN);
-
-    // Look for pending messages from the disconnected peer.
-    // auto messageIdsIt = peersToMessageIds.find(ip);
-    // if (messageIdsIt != peersToMessageIds.end()) {
-    //     LOG(WARNING) << "Peer server '" << ip << "' disconnected with pending messages.";
-
-    //     // Close the message queues of the pending messages remove the message IDs from the
-    //     // messageIds_to_peers map.
-    //     for (const auto id : messageIdsIt->second) {
-    //         messageBuffers[id]->close();
-    //     }
-    // }
 
     // Remove from the peers list.
     peers.erase(ip);
@@ -191,7 +179,7 @@ absl::Status DistributedServer::forwardRequestToHandler(std::unique_ptr<Request>
 absl::Status DistributedServer::handleConnect(std::unique_ptr<Request> request) {
     ASSERT_OK_AND_ASSIGN(message, request->receiveMessage(), "Failed to receive connect request");
     if (message->header.length != sizeof(uint16_t)) {
-        return absl::InternalError("Invalid connect request length.");
+        return absl::InternalError("Invalid connect request length");
     }
 
     // Get the port and ip from the connect request.
@@ -281,8 +269,7 @@ absl::Status DistributedServer::handleConnectAck(std::unique_ptr<Request> reques
     auto tcpRequest = std::unique_ptr<TcpRequest>(dynamic_cast<TcpRequest *>(request.release()));
     request = nullptr;
     if (tcpRequest == nullptr) {
-        LOG(ERROR) << "Failed to cast request to TcpRequest.";
-        return absl::InternalError("Failed to cast request to TcpRequest.");
+        return absl::InternalError("Failed to cast request to TcpRequest");
     }
 
     // Add the peer server to the connector and mappings.

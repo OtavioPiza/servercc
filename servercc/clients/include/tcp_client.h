@@ -23,14 +23,6 @@ class TcpClient : virtual public Client {
     //     socket: The socket.
     //     server_address: The server's address.
     //     port: The server's port.
-    TcpClient(const int socket, const absl::string_view server_address, const uint16_t port);
-
-    // Constructs a TCP client from the specified socket.
-    //
-    // Arguments:
-    //     socket: The socket.
-    //     server_address: The server's address.
-    //     port: The server's port.
     //     client_addr: The client's addr.
     TcpClient(const int socket, const absl::string_view server_address, const uint16_t port,
               sockaddr client_addr);
@@ -38,16 +30,16 @@ class TcpClient : virtual public Client {
     // Client methods.
 
     // See abstract_client.h
-    absl::Status openSocket() override;
+    absl::Status openSocket() final;
 
     // See abstract_client.h
-    absl::Status closeSocket() override;
+    void closeSocket() final;
 
     // See abstract_client.h
-    absl::Status sendMessage(std::unique_ptr<Message> message) override;
+    absl::Status sendMessage(std::unique_ptr<Message> message) final;
 
     // See abstract_client.h
-    std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage() override;
+    std::pair<absl::Status, std::unique_ptr<Message>> receiveMessage() final;
 };
 
 }  // namespace ostp::servercc

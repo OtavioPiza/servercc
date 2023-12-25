@@ -17,13 +17,6 @@ TcpClient::TcpClient(const int socket, const absl::string_view serverAddress, co
 };
 
 // See tcp_client.h for documentation.
-TcpClient::TcpClient(const int socket, const absl::string_view serverAddress, const uint16_t port)
-    : Client(serverAddress, port) {
-    clientFd = socket;
-    isSocketOpen = true;
-}
-
-// See tcp_client.h for documentation.
 absl::Status TcpClient::openSocket() {
     // If the socket is already open, return.
     if (isSocketOpen) {
@@ -74,16 +67,15 @@ absl::Status TcpClient::openSocket() {
 }
 
 // See tcp_client.h for documentation.
-absl::Status TcpClient::closeSocket() {
+void TcpClient::closeSocket() {
     if (clientFd == -1) {
-        return absl::OkStatus();
+        return;
     }
     close(clientFd);
-    LOG(INFO) << "Closed socket: " << clientFd << " for client: " << getAddress() << ":"
-              << getPort();
+    LOG(INFO) << "Closed socket: " << clientFd;
     clientFd = -1;
     isSocketOpen = false;
-    return absl::OkStatus();
+    return;
 }
 
 // See tcp_client.h for documentation.

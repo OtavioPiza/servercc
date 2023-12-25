@@ -46,24 +46,24 @@ absl::Status MulticastClient::openSocket() {
     // Set the file descriptor.
     clientFd = socketFd;
     isSocketOpen = true;
-    LOG(INFO) << "Opened socket " << clientFd << " for multicast client on interface " << interface
-              << " to " << getAddress() << ":" << getPort();
+    LOG(INFO) << "Opened socket: " << clientFd
+              << " for multicast client on interface: " << interface << " to: " << getAddress()
+              << ":" << getPort();
     return absl::OkStatus();
 }
 
 // See udp_client.h for documentation.
-absl::Status MulticastClient::closeSocket() {
+void MulticastClient::closeSocket() {
     // If the socket is already closed, return.
     if (!isSocketOpen) {
-        return absl::OkStatus();
+        return;
     }
     close(clientFd);
-    LOG(INFO) << "Closed socket " << clientFd << " for multicast client on interface " << interface
-              << " to " << getAddress() << ":" << getPort();
+    LOG(INFO) << "Closed socket " << clientFd;
     clientFd = -1;
     isSocketOpen = false;
     clientAddr = {};
-    return absl::OkStatus();
+    return;
 };
 
 // See udp_client.h for documentation.

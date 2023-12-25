@@ -202,8 +202,8 @@ class InternalChannelManager {
             return;
         }
         responseChannel[id]->close();
-        LOG(INFO) << "Removed response channel " << id << "from manager, "
-                  << responseChannel[id].use_count() << "users";
+        LOG(INFO) << "Removed response channel " << id << " from manager, "
+                  << responseChannel[id].use_count() << " users";
         responseChannel[id] = nullptr;
     }
 
@@ -217,8 +217,8 @@ class InternalChannelManager {
             return;
         }
         requestChannel[id]->close();
-        LOG(INFO) << "Removed request channel " << id << "from manager, "
-                  << requestChannel[id].use_count() - 1 << "users remain";
+        LOG(INFO) << "Removed request channel " << id << " from manager, "
+                  << requestChannel[id].use_count() - 1 << " users remain";
         requestChannel[id] = nullptr;
 
         // Add the channel ID to the free list.

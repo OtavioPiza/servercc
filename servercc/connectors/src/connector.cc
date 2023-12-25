@@ -89,6 +89,7 @@ absl::Status Connector::runClient(in_addr_t address) {
     std::thread clientThread([address, client, channelManager, this]() {
         char ipStr[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &address, ipStr, INET_ADDRSTRLEN);
+        LOG(INFO) << "Running client '" << ipStr << "'";
 
         // Enter a read loop.
         while (true) {
@@ -97,11 +98,7 @@ absl::Status Connector::runClient(in_addr_t address) {
             if (!rcvStatus.ok()) {
                 LOG(ERROR) << "Failed to receive message from client '" << ipStr << "': "
                            << rcvStatus.message();
-
-                if (!(rcvStatus = client->closeSocket()).ok()) {
-                    LOG(ERROR) << "Failed to close socket for client '" << ipStr << "': "
-                               << rcvStatus.message();
-                }
+                client->closeSocket();
                 clientsMutex.lock();
                 clients.erase(address);
                 clientsMutex.unlock();
@@ -132,6 +129,7 @@ absl::Status Connector::runClient(in_addr_t address) {
                 }
             }
         }
+        LOG(INFO) << "Client '" << ipStr << "' terminated";
     });
 
     // Detach the thread.

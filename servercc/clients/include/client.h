@@ -112,7 +112,7 @@ class Client {
     //
     // Returns:
     //     A status indicating whether the socket was closed successfully.
-    virtual absl::Status closeSocket() = 0;
+    virtual void closeSocket() = 0;
 
     // Sends a message to the server.
     //
